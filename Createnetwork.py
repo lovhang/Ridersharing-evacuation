@@ -248,14 +248,14 @@ class readnw():
 
 if __name__ == '__main__':
     #randtrig = generalnw()
-    #randtrig.readcord("network/cord3.pkl")
+    #randtrig.readcord("cord3.pkl")
     #readnw("network1.pkl")
     #spctrig = specifcnw()
-    #spctrig.savenw("network/network1.pkl")
-    #rdtrig = readnw("network/cord3.pkl")
-    #rdtrig.createnw("network/realnetwork.pkl")
-    #rdtrig.probset("network/network2_s.pkl")
-    with open("network/realnetwork.pkl", 'rb') as f:
+    #spctrig.savenw("network1.pkl")
+    #rdtrig = readnw("cord3.pkl")
+    #rdtrig.createnw("realnetwork.pkl")
+    #rdtrig.probset("network2_s.pkl")
+    with open("realnetwork.pkl", 'rb') as f:
         connect, tt = pickle.load(f)
         print(connect)
         print(tt)
