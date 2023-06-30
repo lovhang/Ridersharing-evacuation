@@ -245,6 +245,27 @@ class readnw():
         with open(nwaddress, 'wb') as f:
             pickle.dump(nwinfo, f)
 
+class shortpath():
+    '''gets the network of nodes with connections and travel times. Given a
+    set of nodes, it returns the matrix stating the shortest path between nodes
+    and corresponding travel time'''
+    def __int__(self):
+        pass
+    def getshrstpath(self, nodes):
+        with open("realnetwork.pkl", 'rb') as f:
+            relation, ttime = pickle.load(f)
+        f.close()
+        connection = []
+        traveltime = []
+        for i in nodes:
+            connection.append([relation[i][j] for j in nodes])
+            traveltime.append([tt[i][j] for j in nodes])
+        print(traveltime)
+
+
+
+
+
 
 if __name__ == '__main__':
     #randtrig = generalnw()
@@ -257,5 +278,9 @@ if __name__ == '__main__':
     #rdtrig.probset("network2_s.pkl")
     with open("realnetwork.pkl", 'rb') as f:
         connect, tt = pickle.load(f)
-        print(connect)
-        print(tt)
+        #print(connect)
+        #print(tt)
+    f.close()
+    sp = shortpath()
+    sp.getshrstpath([0, 1, 2, 16, 9, 5])
+
