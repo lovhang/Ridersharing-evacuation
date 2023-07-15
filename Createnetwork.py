@@ -246,6 +246,7 @@ class readnw():
             pickle.dump(nwinfo, f)
 
 
+#=================================== Farane Added ===================================
 class ShortestPath:
     def __init__(self, filename):
         self_test = 1
@@ -316,7 +317,7 @@ class ShortestPath:
             p.append(dij[2][traveler])
             traveler = dij[2][traveler]
         return p[::-1], dij[1][destination]
-
+#=================================== Farane Added ===================================
 
 if __name__ == '__main__':
     #randtrig = generalnw()
@@ -327,12 +328,13 @@ if __name__ == '__main__':
     #rdtrig = readnw("cord3.pkl")
     #rdtrig.createnw("realnetwork.pkl")
     #rdtrig.probset("network2_s.pkl")
-    #with open('realnetwork.pkl', 'rb') as f:
-     #   connect, tt = pickle.load(f)
-    #f.close()
+    with open('realnetwork.pkl', 'rb') as f:
+        connect, tt = pickle.load(f)
+    f.close()
 
+    # =================================== Farane Added ===================================
     sp = ShortestPath("realnetwork.pkl")
     dij0 = sp.getShortestPath(range(5), 0)
     path, travel_time = sp.getPath(dij0, 4) # returns the shortest path from
     print(f'Path{path} with travel time {travel_time}')
-
+    #=================================== Farane Added ===================================
