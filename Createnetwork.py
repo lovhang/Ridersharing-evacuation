@@ -245,26 +245,77 @@ class readnw():
         with open(nwaddress, 'wb') as f:
             pickle.dump(nwinfo, f)
 
-class shortpath():
-    '''gets the network of nodes with connections and travel times. Given a
-    set of nodes, it returns the matrix stating the shortest path between nodes
-    and corresponding travel time'''
-    def __int__(self):
-        pass
-    def getshrstpath(self, nodes):
-        with open("realnetwork.pkl", 'rb') as f:
-            relation, ttime = pickle.load(f)
-        f.close()
-        connection = []
-        traveltime = []
-        for i in nodes:
-            connection.append([relation[i][j] for j in nodes])
-            traveltime.append([tt[i][j] for j in nodes])
-        print(traveltime)
+
+class ShortestPath:
+    def __init__(self, filename):
+        self_test = 1
+        if self_test == 0:
+            with open(filename, 'rb') as file:
+                self.cnc, self.tvt = pickle.load(file)
+            file.close()
+        else:
+            self.cnc = [[1, 1, 1, 1, 1],
+                        [1, 1, 0, 0, 0],
+                        [1, 0, 1, 1, 1],
+                        [1, 0, 1, 1, 1],
+                        [1, 0, 1, 1, 1]]
+            self.tvt = [[500, 2, 4, 6, 7],
+                        [2, 500, 500, 500, 500],
+                        [4, 500, 500, 1, 2],
+                        [6, 500, 1, 500, 1],
+                        [7, 500, 2, 1, 500]]
+    def getShortestPath(self, nodes, origin):
+        # initialization step
+        M = np.max(self.tvt)
+        UV = [origin]
+        origin_index = nodes.index(origin)
+        for point in nodes:
+            if point != origin:
+                UV.append(point)
+        Dij = [UV.copy(), [M for i in UV], [0 for i in UV]]
+        Dij[1][0] = 0
+
+        # Condition 1
+        while len(UV) > 1:
+
+            # Find the node from UV with the minimum distance from origin
+            min_distance = M
+            for node in range(len(Dij[0])):
+                if (Dij[0][node] in UV) and (Dij[1][node] <= min_distance):
+                    min_distance = Dij[1][node]
+                    C = Dij[0][node]
+                    C_index = node
+            # output: C as the selected node
+
+            # Find all connections with C from UV
+            # tt_from_C shows the travel time from C to each node in UV
+            # if UV = [3, 5, 7], and tt_from_C = [12, M, 6],
+            # then travel time from C to 3 is 12, to 5 is infeasible, and to 7 is 6'''
+            tt_from_C = [self.tvt[C][i] for i in UV]
+            # output: distance from C to unvisited nodes
 
 
+            # For each feasible connection, find the path through C
+            # Compare it with the current shortest path to each UV node
+            for i in range(len(UV)):
+                if tt_from_C[i] < M:
+                    # There is a feasible path
+                    new_path = Dij[1][C_index] + tt_from_C[i]
+                    current_path = Dij[1][Dij[0].index(UV[i])]
+                    if new_path <= current_path:
+                        # New shortest path. Update Dij
+                        Dij[1][Dij[0].index(UV[i])] = new_path
+                        Dij[2][Dij[0].index(UV[i])] = C
+            UV.remove(C)
+        return Dij
 
-
+    def getPath(self, dij, destination):
+        p = [destination]
+        traveler = destination
+        while traveler != dij[0][0]:
+            p.append(dij[2][traveler])
+            traveler = dij[2][traveler]
+        return p[::-1], dij[1][destination]
 
 
 if __name__ == '__main__':
@@ -276,11 +327,12 @@ if __name__ == '__main__':
     #rdtrig = readnw("cord3.pkl")
     #rdtrig.createnw("realnetwork.pkl")
     #rdtrig.probset("network2_s.pkl")
-    with open("realnetwork.pkl", 'rb') as f:
-        connect, tt = pickle.load(f)
-        #print(connect)
-        #print(tt)
-    f.close()
-    sp = shortpath()
-    sp.getshrstpath([0, 1, 2, 16, 9, 5])
+    #with open('realnetwork.pkl', 'rb') as f:
+     #   connect, tt = pickle.load(f)
+    #f.close()
+
+    sp = ShortestPath("realnetwork.pkl")
+    dij0 = sp.getShortestPath(range(5), 0)
+    path, travel_time = sp.getPath(dij0, 4) # returns the shortest path from
+    print(f'Path{path} with travel time {travel_time}')
 
