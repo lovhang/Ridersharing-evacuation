@@ -252,17 +252,13 @@ class readnw():
 # =================================== Farzane Added ===================================
 class ShortestPath:
     def __init__(self, filename):
-        self_test = 1
+        self_test = 1  # to turn of self testing, change to 0
+
         if self_test == 0:
             with open(filename, 'rb') as file:
-                self.cnc, self.tvt = pickle.load(file)
+                self.tvt = pickle.load(file)
             file.close()
         else:
-            self.cnc = [[1, 1, 1, 1, 1],
-                        [1, 1, 1, 0, 0],
-                        [1, 1, 1, 1, 1],
-                        [1, 0, 1, 1, 1],
-                        [1, 0, 1, 1, 1]]
             self.tvt = [[500, 2, 4, 6, 8],
                         [2, 500, 1, 500, 500],
                         [4, 1, 500, 1, 3],
@@ -273,12 +269,13 @@ class ShortestPath:
         # initialization step
         M = np.max(self.tvt)
         UV = [origin]
-        origin_index = nodes.index(origin)
         for point in nodes:
             if point != origin:
                 UV.append(point)
         Dij = [UV.copy(), [M for i in UV], [0 for i in UV]]
         Dij[1][0] = 0
+        C_index = origin  # to avoid error: reference before assignment
+        C = 0
 
         # Condition 1
         while len(UV) > 1:
@@ -316,10 +313,15 @@ class ShortestPath:
     def getPath(self, dij, destination):
         p = [destination]
         traveler = destination
+        traveltime = dij[1][dij[0].index(destination)]
+
+        # find the path using dij
         while traveler != dij[0][0]:
-            p.append(dij[2][traveler])
-            traveler = dij[2][traveler]
-        return p[::-1], dij[1][destination]
+            traveler_index = dij[0].index(traveler)
+            p.append(dij[2][traveler_index])
+            traveler = dij[2][traveler_index]
+
+        return p[::-1], traveltime
 # =================================== Farzane Added ===================================
 
 
@@ -338,11 +340,13 @@ if __name__ == '__main__':
 
     # =================================== Farzane Added ===================================
     sp = ShortestPath("realnetwork.pkl")
-    start = 0
-    finish = 3
 
-    Dij0 = sp.getDijTable(range(5), start)  # gives the nodes and the origin, return the Dij table
-    path, travel_time = sp.getPath(Dij0, finish)  # gives Dij and destination, returns the shortest path and distance
+    # testing the functions in Shortest Path class
+    start = 4  # origin
+    finish = 0  # destination
+
+    Dij0 = sp.getDijTable(range(5), start)  # gets the nodes and the origin, return the Dij table
+    path, travel_time = sp.getPath(Dij0, finish)  # gets Dij and destination, returns the shortest path and distance
 
     print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
     print(f'Dij Table: {Dij0}')
