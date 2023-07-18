@@ -4,6 +4,7 @@ import math
 import pickle
 import matplotlib.pyplot as plt
 
+
 class specifcnw():
     """
     Create specific network with known node to node shortest path
@@ -57,6 +58,7 @@ class specifcnw():
         print(a22)
         print(a21)
 
+
 class generalnw():
     def __init__(self):
         print("start generalnw")
@@ -79,6 +81,7 @@ class generalnw():
             pickle.dump(cord, f)
         plt.scatter(x_cord, y_cord)
         plt.show()
+
 
 class readnw():
     """
@@ -103,7 +106,7 @@ class readnw():
         xmax = np.max(x_cord)
         ymax = np.max(y_cord)
         plt.scatter(x_cord, y_cord)
-        #find shortest node for each node
+        # find shortest node for each node
         connect = np.zeros((num,num))
         dis = np.full((num,num), self.maxdis)
 
@@ -246,7 +249,7 @@ class readnw():
             pickle.dump(nwinfo, f)
 
 
-#=================================== Farzane Added ===================================
+# =================================== Farzane Added ===================================
 class ShortestPath:
     def __init__(self, filename):
         self_test = 1
@@ -256,16 +259,17 @@ class ShortestPath:
             file.close()
         else:
             self.cnc = [[1, 1, 1, 1, 1],
-                        [1, 1, 0, 0, 0],
-                        [1, 0, 1, 1, 1],
+                        [1, 1, 1, 0, 0],
+                        [1, 1, 1, 1, 1],
                         [1, 0, 1, 1, 1],
                         [1, 0, 1, 1, 1]]
-            self.tvt = [[500, 2, 4, 6, 7],
-                        [2, 500, 500, 500, 500],
-                        [4, 500, 500, 1, 2],
+            self.tvt = [[500, 2, 4, 6, 8],
+                        [2, 500, 1, 500, 500],
+                        [4, 1, 500, 1, 3],
                         [6, 500, 1, 500, 1],
-                        [7, 500, 2, 1, 500]]
-    def getShortestPath(self, nodes, origin):
+                        [8, 500, 3, 1, 500]]
+
+    def getDijTable(self, nodes, origin):
         # initialization step
         M = np.max(self.tvt)
         UV = [origin]
@@ -295,7 +299,6 @@ class ShortestPath:
             tt_from_C = [self.tvt[C][i] for i in UV]
             # output: distance from C to unvisited nodes
 
-
             # For each feasible connection, find the path through C
             # Compare it with the current shortest path to each UV node
             for i in range(len(UV)):
@@ -317,24 +320,30 @@ class ShortestPath:
             p.append(dij[2][traveler])
             traveler = dij[2][traveler]
         return p[::-1], dij[1][destination]
-#=================================== Farzane Added ===================================
+# =================================== Farzane Added ===================================
+
 
 if __name__ == '__main__':
-    #randtrig = generalnw()
-    #randtrig.readcord("cord3.pkl")
-    #readnw("network1.pkl")
-    #spctrig = specifcnw()
-    #spctrig.savenw("network1.pkl")
-    #rdtrig = readnw("cord3.pkl")
-    #rdtrig.createnw("realnetwork.pkl")
-    #rdtrig.probset("network2_s.pkl")
+    # randtrig = generalnw()
+    # randtrig.readcord("cord3.pkl")
+    # readnw("network1.pkl")
+    # spctrig = specifcnw()
+    # spctrig.savenw("network1.pkl")
+    # rdtrig = readnw("cord3.pkl")
+    # rdtrig.createnw("realnetwork.pkl")
+    # rdtrig.probset("network2_s.pkl")
     with open('realnetwork.pkl', 'rb') as f:
         connect, tt = pickle.load(f)
     f.close()
 
     # =================================== Farzane Added ===================================
     sp = ShortestPath("realnetwork.pkl")
-    dij0 = sp.getShortestPath(range(5), 0)
-    path, travel_time = sp.getPath(dij0, 4) # returns the shortest path from
-    print(f'Path{path} with travel time {travel_time}')
-    #=================================== Farzane Added ===================================
+    start = 0
+    finish = 3
+
+    Dij0 = sp.getDijTable(range(5), start)  # gives the nodes and the origin, return the Dij table
+    path, travel_time = sp.getPath(Dij0, finish)  # gives Dij and destination, returns the shortest path and distance
+
+    print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
+    print(f'Dij Table: {Dij0}')
+    # =================================== Farzane Added ===================================
