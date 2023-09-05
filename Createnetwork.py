@@ -58,7 +58,6 @@ class specifcnw():
         print(a22)
         print(a21)
 
-
 class generalnw():
     def __init__(self):
         print("start generalnw")
@@ -82,7 +81,6 @@ class generalnw():
         plt.scatter(x_cord, y_cord)
         plt.show()
 
-
 class readnw():
     """
     Read cord file and transfer to network
@@ -100,17 +98,23 @@ class readnw():
         """
         Read cord file to transfer to network parameter based on manually editing.  Plot the network
         """
+        N1 = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+        N2 = [0,1,8,10,11,13,16,19,20]
         num = self.num
         x_cord = self.x_cord
         y_cord = self.y_cord
         xmax = np.max(x_cord)
         ymax = np.max(y_cord)
-        plt.scatter(x_cord, y_cord)
-        # find shortest node for each node
+        for i in N1:
+            plt.scatter(x_cord[i],y_cord[i], color = 'blue')
+        for i in N2:
+            plt.scatter(x_cord[i],y_cord[i], color = 'yellow')
+        #plt.scatter(x_cord, y_cord)
+        #find shortest node for each node
         connect = np.zeros((num,num))
         dis = np.full((num,num), self.maxdis)
 
-        for i in range(num):
+        for i in N1:
             plt.text(x_cord[i], y_cord[i]+0.4, i)
 
         for i in range(num):
@@ -118,7 +122,7 @@ class readnw():
                 if j != i:
                     dis[i][j] = round(math.sqrt((x_cord[i]-x_cord[j])**2+(y_cord[i]-y_cord[j])**2),2)
         maxinx = dis.argmin(axis=1)
-        #rint(maxinx)
+        #print(maxinx)
         for i in range(num):
             connect[i][maxinx[i]] = 1
             connect[maxinx[i]][i] = 1
@@ -132,12 +136,11 @@ class readnw():
                         connect[j][i] = 1
         #print(connect)
         print(connect[7][13])
-        for i in range(num):
-            for j in range(num):
+
+        for i in N1:
+            for j in N1:
                 if j>i and connect[i][j] > 0.1:
-                    #x = np.linspace(x_cord[i], x_cord[j], 100)
-                    #y = np.linspace(y_cord[i], y_cord[j], 100)
-                    #plt.plot(x, y)
+
                     self.tt[i][j] = dis[i][j]
                     self.tt[j][i] = dis[i][j]
                     plt.plot([x_cord[i],x_cord[j]],[y_cord[i],y_cord[j]], color='black')
@@ -179,7 +182,7 @@ class readnw():
         v_num = 3
         q_num = 3
         Vh = np.array([i for i in range(v_num)])
-        N = np.array([0,1,17,11,10,16,18,13,20])
+        N = np.array([0,1,8,10,11,13,16,17,18,20])
         Na = np.array([16,18,13])
         Nd = np.array([10])
         Np = np.array([1,17,11])
@@ -190,7 +193,7 @@ class readnw():
         qs = np.array([i for i in range(q_num)])
         sq = np.array([1, 1, 1])
         eq = np.array([1, 2, 3])
-        tm = np.array([70, 100,150])
+        tm = np.array([150,180,150])
         dp = [0,0,0]
         cv = np.array([5, 6, 5])
         Y0 = np.array([1, 2, 1])
@@ -202,6 +205,7 @@ class readnw():
         dm[17][0] = 2;dm[17][1] = 3;dm[17][2] = 5;
         ## create travel time between each node
         rtt = np.zeros((num,num))
+        self.tt = self.tt/100
         rtt[1][16] = self.tt[1][9]+ self.tt[18][9]+self.tt[18][3]+self.tt[16][3]
         rtt[1][19] = self.tt[1][9]+ self.tt[18][9]+self.tt[18][3]+self.tt[16][3]+self.tt[16][19]
         rtt[1][18] = self.tt[1][9]+ self.tt[18][9]
@@ -210,7 +214,7 @@ class readnw():
         rtt[1][17] = self.tt[1][9]+ self.tt[18][9]+self.tt[18][3]+self.tt[16][3]+self.tt[16][19]+self.tt[2][19]+self.tt[2][10]+self.tt[10][17]
         rtt[1][11] = self.tt[1][9]+ self.tt[18][9]+self.tt[18][12]+self.tt[4][12]+self.tt[4][11]
         rtt[17][11] = self.tt[7][11]+self.tt[7][13]+self.tt[14][13]+self.tt[14][6]+self.tt[15][6]+self.tt[15][8]+self.tt[17][8]
-        rtt[17][16] = self.tt[16][3]+self.tt[16][19]+self.tt[2][19]+self.tt[2][10]+self.tt[10][17]
+        rtt[17][16] = self.tt[16][19]+self.tt[2][19]+self.tt[2][5]+self.tt[5][17]
         rtt[17][19] = self.tt[2][19]+self.tt[2][10]+self.tt[10][17]
         rtt[17][18] = self.tt[18][3]+self.tt[16][3]+self.tt[16][19]+self.tt[2][19]+self.tt[2][10]+self.tt[10][17]
         rtt[17][13] = self.tt[14][13]+self.tt[14][6]+self.tt[15][6]+self.tt[15][8]+self.tt[8][17]
@@ -238,12 +242,21 @@ class readnw():
         rtt[10][18] = self.tt[18][3]+self.tt[16][3]+self.tt[16][19]+self.tt[2][19]+self.tt[2][10]
         rtt[10][13] = self.tt[14][13]+self.tt[14][6]+self.tt[15][6]+self.tt[10][17]+self.tt[17][8]+self.tt[8][15]
         rtt[10][15] = self.tt[10][17]+self.tt[17][8]+self.tt[8][15]
+        rtt[8][1] = self.tt[8][17]+ rtt[1][17]
+        rtt[8][17] = self.tt[8][17]
+        rtt[8][10] = self.tt[8][17] + rtt[10][17]
+        rtt[8][16] = self.tt[8][17] + rtt[17][16]
+        rtt[8][13] = self.tt[8][15] + rtt[13][15]
+        rtt[8][11] = self.tt[8][15] + rtt[11][15]
+        rtt[8][18] = self.tt[8][15] +rtt[17][18]
+
         for i in N:
             for j in N:
                 if i != j and rtt[i][j]>0.1:
                     rtt[j][i] = rtt[i][j]
-        rdis = np.copy(rtt)
+        rdis = np.copy(self.tt)
         #print(rdis)
+        #print(rtt)
         nwinfo = [num,v_num,q_num,Vh,N,Na,Nd,Np,Ns,Ok,x_cord,y_cord,qs,sq,eq,tm,dp,cv,Y0,pr,dm,rdis,rtt]
         with open(nwaddress, 'wb') as f:
             pickle.dump(nwinfo, f)
