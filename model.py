@@ -11,7 +11,7 @@ import pickle
 
 
 #read network from pkl
-address = "network/network2_s.pkl"
+address = "network2_s.pkl"
 with open(address, 'rb') as f:
     num, v_num, qnum, Vh, N, Na, Nd, Np, Ns, Ok, x_cord, y_cord, qs, sq, eq, tm, dp, cv, Y0, pr, dm, dis, tt = pickle.load(f)
 print(num)
@@ -174,12 +174,13 @@ class visualize():
 
 if __name__ == '__main__':
     print("start model")
+    #print(N, Na, Nd, Np)
     ex = model()
     ex.createmodel()
-    if ex.solvep("solution/nw2_1.pkl") == True:
+    if ex.solvep("solutions/nw2_1.pkl") == True:
         vslz1 = visualize()
         vslz1.plotroutes()
         #vslz1.adddist()
         vslz1.show()
-    #vslz2 = visualize()
-    #vslz2.show()
+    vslz2 = visualize()
+    vslz2.show()

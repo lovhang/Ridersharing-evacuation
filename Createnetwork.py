@@ -70,16 +70,16 @@ class generalnw():
         """
         max_cord = 100
         cord = np.random.randint(0, max_cord, size=(num - 2, 2))  # random creates other 19 nodes location
-        print(cord.shape)
+        #print(cord.shape)
         cord = np.append(cord, [[max_cord, max_cord]], axis=0)
         cord = np.append([[0, 0]], cord, axis=0)
-        print(cord)
+        #print(cord)
         x_cord = cord[:, 0]
         y_cord = cord[:, 1]
         with open(address, 'wb') as f:
             pickle.dump(cord, f)
-        plt.scatter(x_cord, y_cord)
-        plt.show()
+        #plt.scatter(x_cord, y_cord)
+        #plt.show()
 
 class readnw():
     """
@@ -93,7 +93,7 @@ class readnw():
         self.y_cord = self.cord[:,1]
         self.maxdis = 5*np.max(self.x_cord)
         self.tt = np.full((self.num, self.num), self.maxdis)
-        print(self.cord)
+        #print(self.cord)
     def createnw(self, address:str):
         """
         Read cord file to transfer to network parameter based on manually editing.  Plot the network
@@ -135,19 +135,18 @@ class readnw():
                     if connect[i][j] == 1:
                         connect[j][i] = 1
         #print(connect)
-        print(connect[7][13])
+        #print(connect[7][13])
 
         for i in N1:
             for j in N1:
                 if j>i and connect[i][j] > 0.1:
-
                     self.tt[i][j] = dis[i][j]
                     self.tt[j][i] = dis[i][j]
-                    plt.plot([x_cord[i],x_cord[j]],[y_cord[i],y_cord[j]], color='black')
-        print(self.tt)
+                    #plt.plot([x_cord[i],x_cord[j]],[y_cord[i],y_cord[j]], color='black')
+        #print(self.tt)
         with open(address, 'wb') as f:
             pickle.dump([connect, self.tt], f)
-        plt.show()
+        #plt.show()
     def probset(self, nwaddress: str):
         """
         Setting other parameters for problem and save to network file
@@ -340,27 +339,31 @@ class ShortestPath:
 
 if __name__ == '__main__':
     # randtrig = generalnw()
-    # randtrig.readcord("cord3.pkl")
+    # randtrig.readcord("network/cord3.pkl")
     # readnw("network1.pkl")
     # spctrig = specifcnw()
-    # spctrig.savenw("network1.pkl")
-    # rdtrig = readnw("cord3.pkl")
-    # rdtrig.createnw("realnetwork.pkl")
-    # rdtrig.probset("network2_s.pkl")
-    with open('realnetwork.pkl', 'rb') as f:
-        connect, tt = pickle.load(f)
-    f.close()
+    # spctrig.savenw("network/network1.pkl")
+    #rdtrig = readnw("cord3.pkl")
+    #rdtrig.createnw("linknetwork1.pkl")
+    # rdtrig.probset("network/network2_s.pkl")
+    with open("linknetwork1.pkl", 'rb') as f:
+       connect, tt = pickle.load(f)
+    print(connect)
+    print(tt)
+    #with open('realnetwork.pkl', 'rb') as f:
+     #   connect, tt = pickle.load(f)
+    #f.close()
 
     # =================================== Farzane Added ===================================
-    sp = ShortestPath("realnetwork.pkl")
+    #sp = ShortestPath("realnetwork.pkl")
 
     # testing the functions in Shortest Path class
-    start = 4  # origin
-    finish = 0  # destination
+    #start = 4  # origin
+    #finish = 0  # destination
 
-    Dij0 = sp.getDijTable(range(5), start)  # gets the nodes and the origin, return the Dij table
-    path, travel_time = sp.getPath(Dij0, finish)  # gets Dij and destination, returns the shortest path and distance
+    #Dij0 = sp.getDijTable(range(5), start)  # gets the nodes and the origin, return the Dij table
+    #path, travel_time = sp.getPath(Dij0, finish)  # gets Dij and destination, returns the shortest path and distance
 
-    print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
-    print(f'Dij Table: {Dij0}')
+    #print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
+    #print(f'Dij Table: {Dij0}')
     # =================================== Farzane Added ===================================
