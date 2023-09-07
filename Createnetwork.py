@@ -77,21 +77,35 @@ class generalnw():
         x_cord = cord[:, 0]
         y_cord = cord[:, 1]
         with open(address, 'wb') as f:
-            pickle.dump(cord, f)
+            pickle.dump([x_cord, y_cord], f)
         #plt.scatter(x_cord, y_cord)
         #plt.show()
-
+class manipulateCord():
+    def __init__(self, adr:str):
+        with open(adr, 'rb') as f:
+            self.x_cord, self.y_cord = pickle.load(f)
+        f.close()
+        self.y_cord[10]=20
+        self.x_cord[10]=50
+        with open(adr, 'wb') as f:
+            pickle.dump([self.x_cord, self.y_cord], f)
+        f.close()
 class readnw():
     """
     Read cord file and transfer to network
     """
     def __init__(self, address:str):
         with open(address, 'rb') as f:
-            self.cord = pickle.load(f)
-        self.num = len(self.cord)
-        self.x_cord = self.cord[:,0]
-        self.y_cord = self.cord[:,1]
-        self.maxdis = 5*np.max(self.x_cord)
+            self.x_cord, self.y_cord = pickle.load(f)
+        f.close()
+        self.num = len(self.x_cord)
+        self.connect = np.array([[0 for i in range(self.num)] for j in range(self.num)])
+        self.dis = np.full((self.num,self.num), 0.0)
+        for i in range(self.num):
+            for j in range(self.num):
+                if j != i:
+                    self.dis[i][j] = round(math.sqrt((self.x_cord[i]-self.x_cord[j])**2+(self.y_cord[i]-self.y_cord[j])**2),2)
+        self.maxdis = 50 * np.max(self.dis)
         self.tt = np.full((self.num, self.num), self.maxdis)
         #print(self.cord)
     def createnw(self, address:str):
@@ -100,52 +114,45 @@ class readnw():
         """
         N1 = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
         N2 = [0,1,8,10,11,13,16,19,20]
-        num = self.num
         x_cord = self.x_cord
         y_cord = self.y_cord
+        num = self.num
         xmax = np.max(x_cord)
         ymax = np.max(y_cord)
         for i in N1:
             plt.scatter(x_cord[i],y_cord[i], color = 'blue')
         for i in N2:
             plt.scatter(x_cord[i],y_cord[i], color = 'yellow')
-        #plt.scatter(x_cord, y_cord)
-        #find shortest node for each node
-        connect = np.zeros((num,num))
-        dis = np.full((num,num), self.maxdis)
 
-        for i in N1:
-            plt.text(x_cord[i], y_cord[i]+0.4, i)
-
-        for i in range(num):
-            for j in range(num):
-                if j != i:
-                    dis[i][j] = round(math.sqrt((x_cord[i]-x_cord[j])**2+(y_cord[i]-y_cord[j])**2),2)
-        maxinx = dis.argmin(axis=1)
+        maxinx = self.dis.argmin(axis=1)
         #print(maxinx)
         for i in range(num):
-            connect[i][maxinx[i]] = 1
-            connect[maxinx[i]][i] = 1
+            self.connect[i][maxinx[i]] = 1
+            self.connect[maxinx[i]][i] = 1
         # mannully add network connection ##################
-        connect[9][18]=1;connect[3][18]=1;connect[12][16]=1;connect[2][19]=1;connect[2][5]=1;connect[10][17]=1;connect[7][13]=1;connect[8][15]=1;connect[4][11]=1
+        self.connect[9][18]=1;self.connect[3][18]=1;self.connect[12][16]=1;self.connect[2][19]=1;self.connect[2][5]=1;self.connect[10][17]=1;self.connect[7][13]=1;self.connect[8][15]=1;self.connect[4][11]=1
+        self.connect[1][9]=1; self.connect[3][16]=1;self.connect[16][19]=1;self.connect[0][16]=1;self.connect[2][10]=1;self.connect[5][17]=1;self.connect[8][17]=1;self.connect[6][15]=1;self.connect[13][14]=1;
+        self.connect[6][14]=1;self.connect[14][20]=1;self.connect[12][18]=1;self.connect[4][12]=1;self.connect[7][11]=1;
         ############################################
         for i in range(num):
             for j in range(num):
                 if j > i:
-                    if connect[i][j] == 1:
-                        connect[j][i] = 1
+                    if self.connect[i][j] == 1:
+                        self.connect[j][i] = 1
         #print(connect)
         #print(connect[7][13])
-
+        #manipulate the connection of network
+        #connect[10][17] = 0; connect[17][10] = 0
         for i in N1:
             for j in N1:
-                if j>i and connect[i][j] > 0.1:
-                    self.tt[i][j] = dis[i][j]
-                    self.tt[j][i] = dis[i][j]
+                if j>i and self.connect[i][j] > 0.1:
+                    self.tt[i][j] = self.dis[i][j]
+                    self.tt[j][i] = self.dis[i][j]
                     #plt.plot([x_cord[i],x_cord[j]],[y_cord[i],y_cord[j]], color='black')
         #print(self.tt)
         with open(address, 'wb') as f:
-            pickle.dump([x_cord, y_cord, connect, self.tt], f)
+            pickle.dump([x_cord, y_cord, self.dis, self.connect, self.tt], f)
+        f.close()
         #plt.show()
     def probset(self, nwaddress: str):
         """
@@ -259,11 +266,33 @@ class readnw():
         nwinfo = [num,v_num,q_num,Vh,N,Na,Nd,Np,Ns,Ok,x_cord,y_cord,qs,sq,eq,tm,dp,cv,Y0,pr,dm,rdis,rtt]
         with open(nwaddress, 'wb') as f:
             pickle.dump(nwinfo, f)
+        f.close()
+class manipulateNetwork():
+    def __init__(self, adr:str):
+        with open(adr, 'rb') as f:
+            self.x_cord, self.y_cord, self.dist, self.connect, self.tt = pickle.load(f)
+        f.close()
+        self.maxdis = 50 * np.max(self.dis)
+    def del_link(self, ori: int, des: int):
+        self.connect[ori][des] = 0
+        self.connect[des][ori] = 0
+        self.tt[ori][des] = self.maxdis
+        self.tt[des][ori] = self.maxdis
 
+    def add_link(self, ori: int, des: int):
+        self.connect[ori][des] = 1
+        self.connect[des][ori] = 1
+        self.tt[ori][des] = self.dist[ori][des]
+        self.tt[des][ori] = self.dist[ori][des]
+    def save(self, adr2:str):
+        with open(adr2, 'wb') as f:
+            pickle.dump([self.x_cord, self.y_cord, self.dist, self.connect, self.tt], f)
+        f.close()
 class visualize:
     def __init__(self, adr:str):
         with open(adr, 'rb') as f:
-            self.x_cord, self.y_cord, self.connect, self.dist = pickle.load(f)
+            self.x_cord, self.y_cord, self.dist, self.connect, self.tt = pickle.load(f)
+        f.close()
     def showplt(self):
         for i in range(len(self.connect[0])):
             for j in range(len(self.connect[0])):
@@ -274,7 +303,7 @@ class visualize:
                     plt.plot([self.x_cord[i], self.x_cord[j]], [self.y_cord[i], self.y_cord[j]], color='black')
         #
     def save(self, adr:str):
-        plt.savefig('{}.png'.format(adr))
+        plt.savefig(adr)
         plt.show()
 # =================================== Farzane Added ===================================
 class ShortestPath:
@@ -283,7 +312,7 @@ class ShortestPath:
 
         if self_test == 0:
             with open(filename, 'rb') as file:
-                self.x_cord, self.y_cord, self.con, self.tvt = pickle.load(file)
+                self.x_cord, self.y_cord, self.dis, self.con, self.tvt = pickle.load(file)
             self.num = len(self.con[0])
             self.M = np.max(self.tvt)
             file.close()
@@ -359,38 +388,44 @@ class ShortestPath:
                 path, travel_time = self.getPath(dij, j)
                 ttm[i][j] = travel_time
                 ttm[j][i] = travel_time
-                spm[i][j] = path
+                tmparray = np.array(path)
+                spm[i][j] = tmparray
+                spm[j][i] = tmparray[::-1]
 
         return ttm, spm
 # =================================== Farzane Added ===================================
 
 
 if __name__ == '__main__':
-    # randtrig = generalnw()
+     #randtrig = generalnw()
+     #randtrig.gennwcord(30, "cord_40.pkl")
     # randtrig.readcord("network/cord3.pkl")
     # readnw("network1.pkl")
     # spctrig = specifcnw()
     # spctrig.savenw("network/network1.pkl")
-    #rdtrig = readnw("cord3.pkl")
+    #Cordchange = manipulateCord("network/cord3.pkl")
+    #rdtrig = readnw("network/cord3.pkl")
     #rdtrig.createnw("network/linknetwork1.pkl")
-    # rdtrig.probset("network/network2_s.pkl")
-    #with open("linknetwork1.pkl", 'rb') as f:
+    # rdtrig.probset("network/network1_s.pkl")
+    #with open("network/linknetwork1.pkl", 'rb') as f:
        #connect, tt = pickle.load(f)
     #print(connect)
     #print(tt)
     #with open('realnetwork.pkl', 'rb') as f:
      #   connect, tt = pickle.load(f)
     #f.close()
-    #visul =  visualize("network/linknetwork1.pkl")
+
+    #===============visualize network==================
+    #visul = visualize("network/linknetwork1.pkl")
     #visul.showplt()
-    #visul.save("network/linknetwork1")
+    #visul.save(f"network/linknetwork1.png")
     # =================================== Farzane Added ===================================
-    sp = ShortestPath("network/linknetwork1.pkl")
+    #sp = ShortestPath("network/linknetwork1.pkl")
     #print(sp.con)
     #print(sp.tvt)
     # testing the functions in Shortest Path class
-    start = 1  # origin
-    finish = 8 # destination
+    #start = 1  # origin
+    #finish = 8 # destination
 
     #Dij0 = sp.getDijTable(range(21), start)  # gets the nodes and the origin, return the Dij table
     #for i in range(21):
@@ -399,7 +434,12 @@ if __name__ == '__main__':
 
         #print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
     #print(f'Dij Table: {Dij0}')
+    # =================================== Generate Shortest to all Nodes ============
+    sp = ShortestPath("network/linknetwork1.pkl")
     ttm, spm = sp.getSpMatrix()
-    print(ttm)
-    print(np.shape(ttm))
+    with open('network/l1_sp.pkl', 'wb') as f:
+        pickle.dump([ttm, spm], f)
+    print(spm[1][17])
+    print(spm[16][17])
+    #print(np.shape(ttm))
     # =================================== Farzane Added ===================================
