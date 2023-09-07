@@ -145,7 +145,7 @@ class readnw():
                     #plt.plot([x_cord[i],x_cord[j]],[y_cord[i],y_cord[j]], color='black')
         #print(self.tt)
         with open(address, 'wb') as f:
-            pickle.dump([connect, self.tt], f)
+            pickle.dump([x_cord, y_cord, connect, self.tt], f)
         #plt.show()
     def probset(self, nwaddress: str):
         """
@@ -260,15 +260,32 @@ class readnw():
         with open(nwaddress, 'wb') as f:
             pickle.dump(nwinfo, f)
 
-
+class visualize:
+    def __init__(self, adr:str):
+        with open(adr, 'rb') as f:
+            self.x_cord, self.y_cord, self.connect, self.dist = pickle.load(f)
+    def showplt(self):
+        for i in range(len(self.connect[0])):
+            for j in range(len(self.connect[0])):
+                plt.scatter(self.x_cord, self.y_cord, marker='o', color='blue')
+                plt.text(self.x_cord[i] + 1.0, self.y_cord[i] + 1.0, "{i}".format(i=i))
+                if j > i and self.connect[i][j] > 0.1:
+                    # print(0)
+                    plt.plot([self.x_cord[i], self.x_cord[j]], [self.y_cord[i], self.y_cord[j]], color='black')
+        #
+    def save(self, adr:str):
+        plt.savefig('{}.png'.format(adr))
+        plt.show()
 # =================================== Farzane Added ===================================
 class ShortestPath:
     def __init__(self, filename):
-        self_test = 1  # to turn of self testing, change to 0
+        self_test = 0  # to turn of self testing, change to 0
 
         if self_test == 0:
             with open(filename, 'rb') as file:
-                self.tvt = pickle.load(file)
+                self.x_cord, self.y_cord, self.con, self.tvt = pickle.load(file)
+            self.num = len(self.con[0])
+            self.M = np.max(self.tvt)
             file.close()
         else:
             self.tvt = [[500, 2, 4, 6, 8],
@@ -279,7 +296,7 @@ class ShortestPath:
 
     def getDijTable(self, nodes, origin):
         # initialization step
-        M = np.max(self.tvt)
+        M = self.M
         UV = [origin]
         for point in nodes:
             if point != origin:
@@ -288,10 +305,9 @@ class ShortestPath:
         Dij[1][0] = 0
         C_index = origin  # to avoid error: reference before assignment
         C = 0
-
+        ite = 0
         # Condition 1
         while len(UV) > 1:
-
             # Find the node from UV with the minimum distance from origin
             min_distance = M
             for node in range(len(Dij[0])):
@@ -334,6 +350,18 @@ class ShortestPath:
             traveler = dij[2][traveler_index]
 
         return p[::-1], traveltime
+    def getSpMatrix(self):
+        ttm = [[self.M*2 for j in range(self.num)] for j in range(self.num)] # travel time matrix
+        spm = [[None for j in range(self.num)] for j in range(self.num)] # shortest path matrix
+        for i in range(self.num-1):
+            dij= self.getDijTable(range(self.num),i)
+            for j in range(i+1, self.num):
+                path, travel_time = self.getPath(dij, j)
+                ttm[i][j] = travel_time
+                ttm[j][i] = travel_time
+                spm[i][j] = path
+
+        return ttm, spm
 # =================================== Farzane Added ===================================
 
 
@@ -344,26 +372,34 @@ if __name__ == '__main__':
     # spctrig = specifcnw()
     # spctrig.savenw("network/network1.pkl")
     #rdtrig = readnw("cord3.pkl")
-    #rdtrig.createnw("linknetwork1.pkl")
+    #rdtrig.createnw("network/linknetwork1.pkl")
     # rdtrig.probset("network/network2_s.pkl")
-    with open("linknetwork1.pkl", 'rb') as f:
-       connect, tt = pickle.load(f)
-    print(connect)
-    print(tt)
+    #with open("linknetwork1.pkl", 'rb') as f:
+       #connect, tt = pickle.load(f)
+    #print(connect)
+    #print(tt)
     #with open('realnetwork.pkl', 'rb') as f:
      #   connect, tt = pickle.load(f)
     #f.close()
-
+    #visul =  visualize("network/linknetwork1.pkl")
+    #visul.showplt()
+    #visul.save("network/linknetwork1")
     # =================================== Farzane Added ===================================
-    #sp = ShortestPath("realnetwork.pkl")
-
+    sp = ShortestPath("network/linknetwork1.pkl")
+    #print(sp.con)
+    #print(sp.tvt)
     # testing the functions in Shortest Path class
-    #start = 4  # origin
-    #finish = 0  # destination
+    start = 1  # origin
+    finish = 8 # destination
 
-    #Dij0 = sp.getDijTable(range(5), start)  # gets the nodes and the origin, return the Dij table
-    #path, travel_time = sp.getPath(Dij0, finish)  # gets Dij and destination, returns the shortest path and distance
+    #Dij0 = sp.getDijTable(range(21), start)  # gets the nodes and the origin, return the Dij table
+    #for i in range(21):
+      #  finish = i
+       # path, travel_time = sp.getPath(Dij0, finish)  # gets Dij and destination, returns the shortest path and distance
 
-    #print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
+        #print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
     #print(f'Dij Table: {Dij0}')
+    ttm, spm = sp.getSpMatrix()
+    print(ttm)
+    print(np.shape(ttm))
     # =================================== Farzane Added ===================================
