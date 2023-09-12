@@ -105,7 +105,7 @@ class readnw():
             for j in range(self.num):
                 if j != i:
                     self.dis[i][j] = round(math.sqrt((self.x_cord[i]-self.x_cord[j])**2+(self.y_cord[i]-self.y_cord[j])**2),2)
-        self.maxdis = 50 * np.max(self.dis)
+        self.maxdis = 10000
         self.tt = np.full((self.num, self.num), self.maxdis)
         #print(self.cord)
     def createnw(self, address:str):
@@ -272,7 +272,7 @@ class manipulateNetwork():
         with open(adr, 'rb') as f:
             self.x_cord, self.y_cord, self.dist, self.connect, self.tt = pickle.load(f)
         f.close()
-        self.maxdis = 50 * np.max(self.dis)
+        self.maxdis = 10000
     def del_link(self, ori: int, des: int):
         self.connect[ori][des] = 0
         self.connect[des][ori] = 0
@@ -292,6 +292,8 @@ class visualize:
     def __init__(self, adr:str):
         with open(adr, 'rb') as f:
             self.x_cord, self.y_cord, self.dist, self.connect, self.tt = pickle.load(f)
+        print(self.tt[10][17])
+        print(self.tt[17][10])
         f.close()
     def showplt(self):
         for i in range(len(self.connect[0])):
@@ -414,11 +416,13 @@ if __name__ == '__main__':
     #with open('realnetwork.pkl', 'rb') as f:
      #   connect, tt = pickle.load(f)
     #f.close()
-
+    #networkchange = manipulateNetwork("network/linknetwork1.pkl")
+    #networkchange.del_link(2,5)
+    #networkchange.save("network/linknetwork1_0.pkl")
     #===============visualize network==================
-    #visul = visualize("network/linknetwork1.pkl")
+    #visul = visualize("network/linknetwork1_0.pkl")
     #visul.showplt()
-    #visul.save(f"network/linknetwork1.png")
+    #visul.save(f"network/linknetwork1_0.png")
     # =================================== Farzane Added ===================================
     #sp = ShortestPath("network/linknetwork1.pkl")
     #print(sp.con)
@@ -435,9 +439,9 @@ if __name__ == '__main__':
         #print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
     #print(f'Dij Table: {Dij0}')
     # =================================== Generate Shortest to all Nodes ============
-    sp = ShortestPath("network/linknetwork1.pkl")
-    ttm, spm = sp.getSpMatrix()
-    with open('network/l1_sp.pkl', 'wb') as f:
+    sp = ShortestPath("network/linknetwork1_2.pkl")
+    ttm, spm = sp.getSpMatrix() #trave time matrix and corresponding shortest path matrix
+    with open('network/linknetwork1_2_sp.pkl', 'wb') as f:
         pickle.dump([ttm, spm], f)
     print(spm[1][17])
     print(spm[16][17])
