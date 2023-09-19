@@ -7,7 +7,8 @@ import math
 import matplotlib.pyplot as plt
 import random as random
 import pickle
-
+import itertools
+import time
 
 #read network from pkl and transfer it to t_ij^m
 num = 21
@@ -36,7 +37,8 @@ for i in range(0,num):
     for k in scset:
         tt[0][i][k] = 1.0;tt[i][0][k]=1.0;tt[num-1][i][k]=1.0;tt[i][num-1][k]=1.0
         tt[i][i][k] = 1.0
-print(tt[3][8])
+
+#print(tt[3][8])
 #print(sp[3][8])
 #==================== start to create network =======================
 
@@ -49,38 +51,48 @@ print(tt[3][8])
 #Vh = np.array([10,11,13,16,19])
 
 #==================== case 2 ==================
-N = np.array([0,1,2,3,4,5,6,8,10,19,20])
-N_0 = np.array([1,2,3,4,5,6,8,10,19])
-N_1 = np.array([])
-N_2 = np.array([2,3,4,5,6,10])
-N_3 = np.array([])
-N_S = np.array([1,8])
-Vh = np.array([2,3,4,5,6,10,19])
-sd = num-2 #super driver, num-1 is n+1, num-2 is super driver location
-
-N_dummy = np.array([0,20])
+sd = num-2 # super driver,num-1 is n+1, num-2 is super driver location
+N = np.array([0,1,2,3,4,5,6,8,9,sd,20]) # 0,n+1,N_1,N_2,N_3,N_S, super
+N_0 = np.array([1,2,3,4,5,6,8,9,sd])# N_1,N_2,N_3
+N_1 = np.array([]) #N_1 driver
+N_2 = np.array([2,3,4,5,6,9]) #N_2 : flexible driver
+N_3 = np.array([]) #N_3 evacuee
+N_S = np.array([1,8]) #shelter node,
+Vh = np.array([2,3,4,5,6,9,sd]) # Driver index (N_1,N_2,N_3,super)
+N_dummy = np.array([0,num-1])
+N_e = [] # evacuee list, including N_1,N_2,N_3
+for item in N_1:
+    N_e.append(item)
+for item in N_2:
+    N_e.append(item)
+for item in N_3:
+    N_e.append(item)
+#=============parameter ======================
 N_D = np.zeros(num) #destination
 for i in range(0,num):
     N_D[i]=8
 #N_D[10]=8;N_D[11]=8;N_D[13]=8;N_D[16]=8;#;N_D[16]=17;N_D[18]=17;
-dm = np.array([0.0 for i in range(0,num)])
+dm = np.array([0.0 for i in range(0,num)]) # demand, passenger number of node i
 for i in N_2:
     dm[i] = 1.0
 dm[10]=2; dm[11]=1;dm[13]=2;dm[16]=2;
-#tm = np.array([0.0 for i in range(0,num)])
-#tm[10]=220;tm[11]=220;tm[13]=120;tm[16]=120;tm[19]=10000
-cv = np.array([2.0 for i in range(0,num)])
-cv[10]=2; cv[11]=5;cv[13]=5;cv[16]=3; cv[19]=100
- #maximum time window (planning period)
 
-sec_T = [30,150,1000]
-LDP = np.array([bigM for i in range(0,num)]) #latest departure time, the time location is affected
+cv = np.array([2.0 for i in range(0,num)]) # capacity of node i
+cv[10]=2; cv[11]=5;cv[13]=5;cv[16]=3; cv[sd]=100
+ #maximum time window (planning period)
+T_end = 1000
+sec_T = [30,100,T_end]
+LDP = np.array([T_end for i in range(0,num)]) #latest departure time, the time location is affected
 #lDP[10] = mtw; lDP[11] = 60
-EDP = np.array([0 for i in range(0,num)])
-EDP[10]=35
-DT = np.array([bigM for i in range(0,num)]) #Detour time
-DT[10] = 280; DT[11] = 180; DT[13] = 180; DT[16] = 180; DT[19] = 10000
+
+EDP = np.array([0 for i in range(0,num)]) # Earlist departure time
+#EDP[10]=0
+
+DT = np.array([T_end for i in range(0,num)]) #Detour time
+DT[2]=130;DT[3]=150;DT[10] = 280; DT[11] = 180; DT[13] = 180; DT[16] = 180; DT[19] = 10000
+#print(tt[3][8])
 tts = tt/100
+
 M = 20000
 w_s1 = 10000
 w_s2 = 10
@@ -92,7 +104,7 @@ r_var = np.zeros((num,num))
 class model:
     def __init__(self):
         self.mdl = Model(name='Evacuation')
-        print(M)
+        #print(M)
         self.x_indices = [(i,j,k,m) for i in N for j in N if i!=j for k in Vh for m in scset ]
         self.x = self.mdl.binary_var_dict(self.x_indices, name='x')
         self.yr_indices = [(i,k) for i in N for k in Vh]
@@ -214,7 +226,198 @@ class model:
               #  r_var[i][k] = round(rtempvar,2)
                     print(f'Value of r[{i},{k}]:', r_var[i][k])
             self.mdl.end()
-class visualize():
+class state:
+    def __init__(self, S,R,T,dt,Q,route, last):
+        #print(input)
+        #self.v = input
+        self.S = S # Set of included node
+        self.R = R # Set of evacuee node haven't been delivered
+        self.T = T# [max(tt[0][self.v][0], EDP[self.v])] # Set of leaving time
+        self.dt = dt # Set of maximum detour time for i in R
+        self.Q = Q#[dm[self.v]] # Set of leaving number of people
+        self.route = route
+        self.last = last
+        #for _ in N_0:
+         #   if _ != sd and _ != self.v:
+          #      self.C.add(_)
+class dynapro:
+    def __init__(self):
+        print("initiate")
+        self.solutionpoll = []
+        self.Ncan = []
+        self.candidateState = []
+        self.ite = 0
+        for item in N_1:
+            self.Ncan.append(item)
+        for item in N_2:
+            self.Ncan.append(item)
+        for _ in self.Ncan:
+            S = [0,_]
+            R = [_]
+            et = max(tt[0][_][0], EDP[_]) #leaving time
+            T = [et]
+            dt = [et + DT[_]]
+            Q = [dm[_]]
+            route = [[N[0],_]]
+            last = _
+            s1 = state(S, R, T, dt, Q, route, last)
+            self.solutionpoll.append(s1)
+    def action(self, inputstate: state, des:int ):
+        S = inputstate.S.copy()
+        R = inputstate.R.copy()
+        T = inputstate.T.copy()
+        dt = inputstate.dt.copy()
+        Q = inputstate.Q.copy()
+        route = inputstate.route.copy()
+        l = inputstate.last
+        if des in N_S: # for des is the destination node
+            if N_D[S[0]] == des: # if des is the destination of driver
+                ifRnotd = False
+                for item in R:
+                    if N_D[item] != des:
+                        ifRnotd = True
+                        print("visit destination of driver while there still evacuees whos destination is other location")
+                if ifRnotd == True:
+                    return False
+                else:
+                    for i in range(len(tt[l][des])):
+                        T_j = T[-1] + tt[l][des][i]  #
+                        Q_j = Q[-1]
+                        dtmin = min(dt)
+                        if T_j <= min(sec_T[i], LDP[des], dtmin):
+                            R = []
+                            dt = []
+                            Q_j = 0
+                            S.append(des)
+                            S.append(N[-1])
+                            T.append(T_j)
+                            Q.append(Q_j)
+                            route.append(sp[l][des][i])
+                            l = N[-1]
+                            return state(S, R, T, dt, Q,route, l)
+                    return False
+            else:
+                for i in range(len(tt[l][des])): # if i is the destination of evacuees
+                    T_j = T[-1] + tt[l][des][i] #
+                    Q_j = Q[-1]
+                    dtmin = min(dt)
+                    if T_j <= min(sec_T[i],LDP[des],dtmin ):
+                        for j in range(len(R) - 1, -1, -1):
+                            if N_D[R[j]] == des:
+                                Q_j -= dm[R[j]]
+                                del R[j]
+                                del dt[j]
+
+                        S.append(des)
+                        T.append(T_j)
+                        Q.append(Q_j)
+                        route.append(sp[l][des][i])
+                        l = des
+                        return state(S,R,T,dt,Q,route,l)
+                return False
+        if des in N_e: # if des is node of evacuees
+            try:
+                if des in S:
+                    raise ValueError("demand node {i} already visited before".format(i=des))
+                else:
+                    for i in range(len(tt[l][des])):
+                        T_j = max(EDP[des],T[-1] + tt[l][des][i]) #
+                        Q_j = Q[-1] + dm[des]
+                        dtmin = min(dt)
+                        if T_j <= min(sec_T[i],LDP[des],dtmin ) and Q_j <= cv[S[0]]:
+                            R.append(des)
+                            S.append(des)
+                            T.append(T_j)
+                            dt.append(T_j + DT[des])
+                            Q.append(Q_j)
+                            route.append(sp[l][des][i])
+                            l = des
+                            return state(S,R,T,dt,Q,route,l)
+                    return False
+            except ValueError as e:
+                print(e)
+        else:
+            print('des not in N_e and N_S')
+            return False
+    def rundp(self, input:list):
+        tempslopol = input
+        returnstate = []
+        if len(tempslopol)>=1:
+            self.ite += 1
+            #print(self.ite)
+            for item in tempslopol:
+                #print('S before', item.S)
+                #print('last', item.last)
+                if item.last == N[-1]:
+                    self.candidateState.append(item)
+                else:
+                    can_node = []
+                    S = item.S
+                    for _ in N_e:
+                        if _ not in S:
+                            can_node.append(_)
+                    for _ in S:
+                        if N_D[_] in N_S:
+                            can_node.append(int(N_D[_]))
+                            break
+                    for des in can_node:
+                        #print('des', des)
+                        tpstate = self.action(item,des)
+                        if tpstate != False:
+                            returnstate.append(tpstate)
+            return self.rundp(returnstate)
+        else:
+            #print("end iteration")
+            return None
+class dymaster:
+    def __init__(self, input:list):
+        self.a = [[] for i in range(num)] # v,k,i
+        self.route = [[] for i in range(num)] # v,k
+        self.route2 = [[] for i in range(num)]
+        for item in input:
+            temp = [0.0 for i in range(num)]
+            self.route[item.S[1]].append(item.S)
+            self.route[item.S[1]].append(item.route)
+            for _ in N_e:
+                if _ in item.S:
+                    temp[_] = 1.0
+            self.a[item.S[1]].append(temp)
+        self.mdl = Model(name='masterprob')
+        self.maxlen = 0
+        for item in self.a:
+            lent = len(item)
+            if lent > self.maxlen:
+                self.maxlen = lent
+        self.x_indices = [(v,k) for v in Vh for k in range(self.maxlen)]
+        self.x = self.mdl.binary_var_dict(self.x_indices, name='x')
+        self.result = []
+
+    def masterprob(self):
+        self.mdl.minimize(self.mdl.sum(self.x[v,k] for v in Vh for k in range(self.maxlen)))
+        for i in N_e:
+            temp = 0
+            for v in Vh:
+                for k in range(len(self.a[v])):
+                    temp = temp + self.a[v][k][i]*self.x[v,k]
+            self.mdl.add_constraint(temp == 1.0)
+        for v in Vh:
+            self.mdl.add_constraint(self.mdl.sum(self.x[v,k] for k in range(len(self.a[v]))) <= 1.0)
+        self.mdl.export_as_lp("masterprob_model")
+    def solve(self):
+        solution = self.mdl.solve(log_output=True)
+
+        for v in Vh:
+            for k in range(self.maxlen):
+                if solution.get_value(self.x[v,k]) > 0.9:
+                    self.result.append(self.route[v][k])
+
+        print(self.result)
+
+
+
+
+
+class visualize:
     def __int__(self):
         self.carcl = np.array([None for _ in num], dtype = 'object')
         for _ in Vh:
@@ -258,11 +461,40 @@ class visualize():
     def show(self):
         plt.show()
 
-exp = model()
-exp.createmodel()
-exp.solve()
-vis = visualize()
-vis.shownetwork()
-vis.showroutes()
-vis.show()
+
+
+def main(triger:int):
+    #============run model on cplex==============
+    if triger == 0:
+        exp = model()
+        exp.createmodel()
+        exp.solve()
+        #vis = visualize()
+        #vis.shownetwork()
+        #vis.showroutes()
+        #vis.show()
+    #============run model on dynamic programming==========
+    elif triger == 1:
+        print("start dynamic programming")
+        ts = dynapro()
+        print(ts.solutionpoll)
+        start = time.time()
+        ts.rundp(ts.solutionpoll)
+        end = time.time()
+        for item in ts.candidateState:
+            print(item.S)
+            #print(item.T)
+            #print(item.route)
+        #print(len(ts.candidateState))
+        dyma = dymaster(ts.candidateState)
+        dyma.masterprob()
+        dyma.solve()
+        print('time for generating routes: ', (end-start) * 10**3, "ms")
+
+
+
+
+
+if __name__=="__main__":
+    main(1)
 

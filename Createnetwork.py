@@ -80,6 +80,10 @@ class generalnw():
             pickle.dump([x_cord, y_cord], f)
         #plt.scatter(x_cord, y_cord)
         #plt.show()
+    def randwomcord(self):
+        x_cord = [0,12,2,5]; y_cord = [1,5,8,6]
+
+
 class manipulateCord():
     def __init__(self, adr:str):
         with open(adr, 'rb') as f:
