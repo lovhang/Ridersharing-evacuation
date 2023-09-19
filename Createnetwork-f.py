@@ -300,43 +300,45 @@ class ShortestPath:
         # copy travel time to modification
         tvt = copy.deepcopy(self.tvt)
 
-        # keep the index of the malfunctioned edge
-        m_index = 0
+        # Given the order of malfunctioning edges, the shortest path matrix is modified.
+        for m_index in range(len(malfunc_edges)):
 
-        # Remove the edge from network by tvt
-        for edge in malfunc_edges:
-            tvt[edge[0]][edge[1]], tvt[edge[1]][edge[0]] = self.M, self.M
+            # Remove the edge from network by tvt
+            for edge in malfunc_edges:
+                tvt[edge[0]][edge[1]], tvt[edge[1]][edge[0]] = self.M, self.M
 
-        # For each path i to j, check if the malfunctioned edge is on the path
-        for i in range(len(shortest_path_matrix) - 1):
-            for j in range(i + 1, len(shortest_path_matrix)):
-                indicator = shortest_path_matrix[i][j][0]
-                condition = 0
+            # For each path i to j, check if the malfunctioned edge is on the path
+            for i in range(len(shortest_path_matrix) - 1):
+                for j in range(i + 1, len(shortest_path_matrix)):
+                    indicator = shortest_path_matrix[i][j][-1]
+                    condition = 0
 
-                # condition becomes 1 if malfunction edge is on the path
-                for index in range(len(indicator) - 1):
-                    condition += int(indicator[index] == malfunc_edges[m_index][0] and indicator[index + 1] == \
-                                malfunc_edges[m_index][1])
-                    condition += int(indicator[index] == malfunc_edges[m_index][1] and indicator[index + 1] == \
-                                 malfunc_edges[m_index][0])
+                    # condition becomes 1 if malfunction edge is on the path
+                    for index in range(len(indicator) - 1):
+                        condition += int(indicator[index] == malfunc_edges[m_index][0] and indicator[index + 1] == \
+                                    malfunc_edges[m_index][1])
+                        condition += int(indicator[index] == malfunc_edges[m_index][1] and indicator[index + 1] == \
+                                     malfunc_edges[m_index][0])
 
-                # remove malfunction edge from network and find another shortest path, add it to indicator.
-                if condition >= 1:
-                    alt_dij = self.getDijTable(range(self.num), i, tvt)
-                    alt_path, alt_path_tvt = self.getPath(alt_dij, j)
+                    # remove malfunction edge from network and find another shortest path, add it to indicator.
+                    if condition >= 1:
+                        alt_dij = self.getDijTable(range(self.num), i, tvt)
+                        alt_path, alt_path_tvt = self.getPath(alt_dij, j)
 
-                    # update the SPMatrix and SPTimes
-                    if len(shortest_path_matrix[i][j]) >= 2:
-                        shortest_path_matrix[i][j].append(alt_path)
-                        shortest_path_matrix[j][i].append(alt_path[::-1])
-                        shortest_path_travel_time[j][i].append(alt_path_tvt)
-                        shortest_path_travel_time[j][i].append(alt_path_tvt)
-                    else:
-                        shortest_path_matrix[i][j] = [shortest_path_matrix[i][j][0], alt_path]
-                        shortest_path_matrix[j][i] = [shortest_path_matrix[i][j][0], alt_path[::-1]]
-                        shortest_path_travel_time[i][j] = [shortest_path_travel_time[i][j][0], alt_path_tvt]
-                        shortest_path_travel_time[j][i] = [shortest_path_travel_time[i][j][0], alt_path_tvt]
-
+                        # update the SPMatrix and SPTimes
+                        if len(shortest_path_matrix[i][j]) >= 2:
+                            shortest_path_matrix[i][j].append(alt_path)
+                            shortest_path_matrix[j][i].append(alt_path[::-1])
+                            shortest_path_travel_time[j][i].append(alt_path_tvt)
+                            shortest_path_travel_time[j][i].append(alt_path_tvt)
+                        else:
+                            shortest_path_matrix[i][j] = [shortest_path_matrix[i][j][0], alt_path]
+                            shortest_path_matrix[j][i] = [shortest_path_matrix[j][i][0], alt_path[::-1]]
+                            shortest_path_travel_time[i][j] = [shortest_path_travel_time[i][j][0], alt_path_tvt]
+                            shortest_path_travel_time[j][i] = [shortest_path_travel_time[j][i][0], alt_path_tvt]
+                # End of loop over SPMatrix columns
+            # End of loop over SPMatrix rows
+        # End of loop over malfunction edges
         return shortest_path_matrix, shortest_path_travel_time
 
     # ===============================   September 18, 2023   =====================================
@@ -428,7 +430,7 @@ if __name__ == '__main__':
     '''
 
     # ============================= Farzane Added: September 18 2023 =============================
-    spp_alt, spt_alt = sp.detAlternative(spp, spt, [[3, 16]])
+    spp_alt, spt_alt = sp.detAlternative(spp, spt, [[3, 16], [16, 12]])
     print(spp_alt[3][2], spt_alt[3][2])
 
     '''
