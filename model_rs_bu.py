@@ -61,6 +61,7 @@ N_S = np.array([1,8]) #shelter node,
 Vh = np.array([2,3,4,5,6,9,sd]) # Driver index (N_1,N_2,N_3,super)
 N_dummy = np.array([0,num-1])
 N_e = [] # evacuee list, including N_1,N_2,N_3
+
 for item in N_1:
     N_e.append(item)
 for item in N_2:
