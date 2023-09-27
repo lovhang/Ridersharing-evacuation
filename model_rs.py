@@ -49,11 +49,10 @@ else:
             tt[i][sd][k] = 1.0  # all nodes to superdriver for all scenarios
             tt[i][i][k] = 1.0  # node to itself for all scenarios
 
-# ==================== start to create network =======================
 # =============== Case study Generation =======================
 # set of all case studies of N
-N_cases = [np.array([0, 1, 5, 4, 6, 8, 9, 10, 16, sd, 20]),
-           np.array([0, 1, 2, 5, 7, 8, 10, 13, 17, 18, sd, 20]),
+N_cases = [np.array([0, 1, 4, 5, 6, 8, 9, 10, 16, sd, 20]),
+           np.array([0, 1, 2, 7, 8, 10, 13, 17, 18, sd, 20]),
            np.array([0, 1, 3, 4, 6, 8, 9, 10, 14, 15, 17, sd, 20]),
            np.array([0, 1, 4, 5, 6, 7, 8, 9, 13, 12, 15, 16, 18, sd, 20])]
 
@@ -65,7 +64,7 @@ N_1_cases = [np.array([5, 16]),
              np.array([5, 6, 7, 12, 15])]
 
 N_2_cases = [np.array([4, 6]),
-             np.array([5, 13]),
+             np.array([13]),
              np.array([14, 17]),
              np.array([9, 13, 18])]
 
@@ -552,7 +551,6 @@ class visualize:
 
     def showroutes(self):
         for k in Vh:
-            random.seed(k)
             r = random.random()
             b = random.random()
             g = random.random()
