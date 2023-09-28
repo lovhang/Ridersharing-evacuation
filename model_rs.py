@@ -372,16 +372,17 @@ class dynapro:
         Q = inputstate.Q.copy()
         route = inputstate.route.copy()
         l = inputstate.last
+        #print(N_S)
         if des in N_S:  # for des is the destination node
-            if N_D[S[0]] == des:  # if des is the destination of driver
+            if N_D[S[1]] == des:  # if des is the destination of driver
                 ifRnotd = False
                 for item in R:
                     if N_D[item] != des:
                         ifRnotd = True
-                        print(
-                            "visit destination of driver while there still evacuees whos destination is other location")
+                        #print(
+                         #   "visit destination of driver while there still evacuees whos destination is other location")
                 if ifRnotd == True:
-                    return False
+                    return None
                 else:
                     for i in range(len(tt[l][des])):
                         T_j = T[-1] + tt[l][des][i]  #
@@ -398,7 +399,7 @@ class dynapro:
                             route.append(sp[l][des][i])
                             l = N[-1]
                             return state(S, R, T, dt, Q, route, l)
-                    return False
+                    return None
             else:
                 for i in range(len(tt[l][des])):  # if i is the destination of evacuees
                     T_j = T[-1] + tt[l][des][i]  #
@@ -417,7 +418,7 @@ class dynapro:
                         route.append(sp[l][des][i])
                         l = des
                         return state(S, R, T, dt, Q, route, l)
-                return False
+                return None
         if des in N_e:  # if des is node of evacuees
             try:
                 if des in S:
@@ -427,7 +428,7 @@ class dynapro:
                         T_j = max(EDP[des], T[-1] + tt[l][des][i])  #
                         Q_j = Q[-1] + dm[des]
                         dtmin = min(dt)
-                        if T_j <= min(ScenTimes[i], LDP[des], dtmin) and Q_j <= cv[S[0]]:
+                        if T_j <= min(ScenTimes[i], LDP[des], dtmin) and Q_j <= cv[S[1]]:
                             R.append(des)
                             S.append(des)
                             T.append(T_j)
@@ -436,7 +437,7 @@ class dynapro:
                             route.append(sp[l][des][i])
                             l = des
                             return state(S, R, T, dt, Q, route, l)
-                    return False
+                    return None
             except ValueError as e:
                 print(e)
         else:
@@ -452,23 +453,25 @@ class dynapro:
             for item in tempslopol:
                 # print('S before', item.S)
                 # print('last', item.last)
-                if item.last == N[-1]:
-                    self.candidateState.append(item)
-                else:
-                    can_node = []
-                    S = item.S
-                    for _ in N_e:
-                        if _ not in S:
-                            can_node.append(_)
-                    for _ in S:
-                        if N_D[_] in N_S:
-                            can_node.append(int(N_D[_]))
-                            break
-                    for des in can_node:
+
+                can_node = []
+                S = item.S
+                for _ in N_e:
+                    if _ not in S:
+                        can_node.append(_)
+                for _ in S:
+                    if N_D[_] in N_S:
+                        can_node.append(int(N_D[_]))
+                        break
+                for des in can_node:
                         # print('des', des)
-                        tpstate = self.action(item, des)
-                        if tpstate != False:
+                    tpstate = self.action(item, des)
+                    if tpstate != None:
+                        if tpstate.last == N[-1]:
+                            self.candidateState.append(tpstate)
+                        else:
                             returnstate.append(tpstate)
+            self.solutionpoll = returnstate.copy()
             return self.rundp(returnstate)
         else:
             # print("end iteration")
@@ -480,7 +483,9 @@ class dymaster:
         self.a = [[] for i in range(num)]  # v,k,i
         self.route = [[] for i in range(num)]  # v,k
         self.route2 = [[] for i in range(num)]
+        print('input')
         for item in input:
+            print(item.S)
             temp = [0.0 for i in range(num)]
             self.route[item.S[1]].append(item.S)
             self.route[item.S[1]].append(item.route)
@@ -496,23 +501,31 @@ class dymaster:
                 self.maxlen = lent
         self.x_indices = [(v, k) for v in Vh for k in range(self.maxlen)]
         self.x = self.mdl.binary_var_dict(self.x_indices, name='x')
+        self.y = self.mdl.binary_var(name = 'y')
         self.result = []
 
     def masterprob(self):
-        self.mdl.minimize(self.mdl.sum(self.x[v, k] for v in Vh for k in range(self.maxlen)))
+        wy = 500 #weight for super driver
+        self.mdl.minimize(self.mdl.sum(self.x[v, k] for v in Vh for k in range(self.maxlen)) + wy*self.y)
         for i in N_e:
+            rn = 0 # check if there is a route visit this node
             temp = 0
             for v in Vh:
                 for k in range(len(self.a[v])):
+                    rn += self.a[v][k][i]
                     temp = temp + self.a[v][k][i] * self.x[v, k]
-            self.mdl.add_constraint(temp == 1.0)
+            if rn > 0.1:
+                print(rn)
+                temp = temp +self.y
+                self.mdl.add_constraint(temp == 1.0)
+                print(temp)
         for v in Vh:
             self.mdl.add_constraint(self.mdl.sum(self.x[v, k] for k in range(len(self.a[v]))) <= 1.0)
         self.mdl.export_as_lp("masterprob_model")
 
     def solve(self):
         solution = self.mdl.solve(log_output=True)
-
+        print("objective value: " + str(solution.get_objective_value()))
         for v in Vh:
             for k in range(self.maxlen):
                 if solution.get_value(self.x[v, k]) > 0.9:
