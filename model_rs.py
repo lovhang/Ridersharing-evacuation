@@ -119,7 +119,7 @@ T_end_cases = [1000, 1400, 1000, 800]
 # =============== End of Case study Generation =======================
 
 # ===== change case number from 1 to case_count to run codes for different case studies ====
-case_number = 0
+case_number = 3
 N = N_cases[case_number]  # 0,n+1,N_1,N_2,N_3,N_S, super
 N_0 = N_0_cases[case_number]  # N_1,N_2,N_3
 N_1 = N_1_cases[case_number]  # N_1 driver
@@ -472,7 +472,9 @@ class dynapro:
                         else:
                             returnstate.append(tpstate)
             self.solutionpoll = returnstate.copy()
-            return self.rundp(returnstate)
+            print('====iteration==== {i}'.format(i = self.ite))
+            print(self.solutionpoll)
+            return self.rundp(self.solutionpoll)
         else:
             # print("end iteration")
             return None
