@@ -505,7 +505,7 @@ class dymaster:
         self.x = self.mdl.binary_var_dict(self.x_indices, name='x')
         self.y = self.mdl.binary_var(name = 'y')
         self.result = []
-        self.result2=[]
+        self.result2 = []
 
     def masterprob(self):
         wy = 500 #weight for super driver
