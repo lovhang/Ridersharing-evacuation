@@ -602,7 +602,10 @@ def main(triger: int):
         start = time.time()
         ts.rundp(ts.solutionpoll)
         end = time.time()
+        ite = 0
         for item in ts.candidateState:
+            print(ite)
+            ite += 1
             print(item.S)
             # print(item.T)
             # print(item.route)
