@@ -490,7 +490,7 @@ class dymaster:
             print(item.S)
             temp = [0.0 for i in range(num)]
             self.route[item.S[1]].append(item.S)
-            self.route[item.S[1]].append(item.route)
+            self.route2[item.S[1]].append(item.route)
             for _ in N_e:
                 if _ in item.S:
                     temp[_] = 1.0
@@ -505,6 +505,7 @@ class dymaster:
         self.x = self.mdl.binary_var_dict(self.x_indices, name='x')
         self.y = self.mdl.binary_var(name = 'y')
         self.result = []
+        self.result2=[]
 
     def masterprob(self):
         wy = 500 #weight for super driver
@@ -532,6 +533,7 @@ class dymaster:
             for k in range(self.maxlen):
                 if solution.get_value(self.x[v, k]) > 0.9:
                     self.result.append(self.route[v][k])
+                    self.result2.append(self.route2[v][k])
 
         print(self.result)
 
