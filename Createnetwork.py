@@ -450,16 +450,14 @@ if __name__ == '__main__':
     For example: malfunc_edge = [(12, 4), (10, 17)] and malfunc_time = [10, 30] menas edge (12,4) becomes out of service
     at time 10 and edge (10, 17) at time 30.
     '''
-    sp = ShortestPath("network/linknetwork1.pkl")
-    spp, spt = sp.getSpMatrix()  # travel time matrix and corresponding shortest path matrix
-    for i in (0, 1, 2):
-        with open(f'network/linknetwork1_{i}_SPMatrix.pkl', 'wb') as f:
-            pickle.dump([spp, spt], f)
-
-    # ============================= Farzane Added: September 18 2023 =============================
     scenario_times = [30, 100]
     scenario_edges = ([3, 16], [16, 12])
+
+    sp = ShortestPath("network/linknetwork1.pkl")
+    spp, spt = sp.getSpMatrix()  # travel time matrix and corresponding shortest path matrix
     spp_alt, spt_alt, tvt, con = sp.detAlternative(spp, spt, scenario_edges, scenario_times)  # update based the malfunction time
+
+
     with open('network/linknetwork1_SPMatrixAlt.pkl', 'wb') as f:
         pickle.dump([spp_alt, spt_alt, tvt, scenario_edges, scenario_times], f)
     f.close()
