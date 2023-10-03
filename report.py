@@ -30,7 +30,7 @@ for sol in solutions:
     buffer2 = 0
 
     for i in range(1, len(sol)):
-        buffer1 += dm[sol[i]]
+        buffer1 += dm[sol[i-1]]
         passTemp1.append(buffer1)
 
         buffer2 += tt[sol[i-1]][sol[i]][0]  # not considering different scenarios for now
