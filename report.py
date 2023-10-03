@@ -12,7 +12,7 @@ with open(f'network/linknetwork1_SPMatrixAlt.pkl', 'rb') as f:
     sp, tt, tvt, SceEdges, ScenTimes = pickle.load(f)
 f.close()
 case_number = 3
-with open(f'case_{case_number}_solutions_dp.pkl', 'rb') as f:
+with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'rb') as f:
     solutions, dm, cv, N, N_D, N_S = pickle.load(f)
 f.close()
 num = len(cv)
@@ -51,7 +51,7 @@ class visualize:
             if i in N_S:
                 ax.plot3D(x_cord[i], y_cord[i], 0, marker='D', color='gray', markersize=6)
                 ax.text(x_cord[i] + 0.5, y_cord[i] + 0.5, 0, f"{i}")
-            elif i == num-1:
+            elif i == num-2:
                 ax.plot3D(x_cord[i], y_cord[i], 0, marker='*', color='gray', markersize=6)
                 ax.text(x_cord[i] + 0.5, y_cord[i] + 0.5, 0, f"{i})")
             else:
