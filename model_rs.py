@@ -56,6 +56,7 @@ N_cases = [np.array([0, 1, 4, 5, 6, 8, 9, 10, 16, sd, 20]),
            np.array([0, 1, 3, 4, 6, 8, 9, 10, 14, 15, 17, sd, 20]),
            np.array([0, 1, 4, 5, 6, 7, 8, 9, 13, 12, 15, 16, 18, sd, 20])]
 
+
 case_count = len(N_cases)
 
 N_1_cases = [np.array([5, 16]),
@@ -120,6 +121,7 @@ T_end_cases = [1000, 1400, 1000, 800]
 
 # ===== change case number from 1 to case_count to run codes for different case studies ====
 case_number = 3
+
 N = N_cases[case_number]  # 0,n+1,N_1,N_2,N_3,N_S, super
 N_0 = N_0_cases[case_number]  # N_1,N_2,N_3
 N_1 = N_1_cases[case_number]  # N_1 driver
@@ -318,7 +320,7 @@ class model:
                     #   rtempvar = solution.get_value(self.r[i,k])
                     #  r_var[i][k] = round(rtempvar,2)
                     print(f'Value of r[{i},{k}]:', r_var[i][k])
-            with open(f'case_{case_number}_solutions.pkl', 'wb') as f:
+            with open(f'solutions/case_{case_number}_solutions.pkl', 'wb') as f:
                 pickle.dump([x_var, y_var, r_var, sol_time], f)
             f.close()
             self.mdl.end()
@@ -355,6 +357,7 @@ class dynapro:
             S = [0, _]
             R = [_]
             et = max(tt[0][_][0], EDP[_])  # leaving time
+            print(et)
             T = [et]
             dt = [et + DT[_]]
             Q = [dm[_]]
@@ -371,6 +374,7 @@ class dynapro:
         Q = inputstate.Q.copy()
         route = inputstate.route.copy()
         l = inputstate.last
+        #print(N_S)
         if des in N_S:  # for des is the destination node
             if N_D[S[1]] == des:  # if des is the destination of driver
                 ifRnotd = False
@@ -533,6 +537,9 @@ class dymaster:
         for i in N:
             if solution.get_value(self.y[i]) > 0.9:
                 self.yresult.append(i)
+        with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'wb') as f:
+            pickle.dump([self.result, dm, cv, N, N_D, N_S], f)
+        f.close()
         print(self.result)
         print('========super driver=========')
         print(self.yresult)
