@@ -56,6 +56,7 @@ N_cases = [np.array([0, 1, 4, 5, 6, 8, 9, 10, 16, sd, 20]),
            np.array([0, 1, 3, 4, 6, 8, 9, 10, 14, 15, 17, sd, 20]),
            np.array([0, 1, 4, 5, 6, 7, 8, 9, 13, 12, 15, 16, 18, sd, 20])]
 
+
 case_count = len(N_cases)
 
 N_1_cases = [np.array([5, 16]),
@@ -120,6 +121,7 @@ T_end_cases = [1000, 1400, 1000, 800]
 
 # ===== change case number from 1 to case_count to run codes for different case studies ====
 case_number = 3
+
 N = N_cases[case_number]  # 0,n+1,N_1,N_2,N_3,N_S, super
 N_0 = N_0_cases[case_number]  # N_1,N_2,N_3
 N_1 = N_1_cases[case_number]  # N_1 driver
@@ -318,7 +320,7 @@ class model:
                     #   rtempvar = solution.get_value(self.r[i,k])
                     #  r_var[i][k] = round(rtempvar,2)
                     print(f'Value of r[{i},{k}]:', r_var[i][k])
-            with open(f'case_{case_number}_solutions.pkl', 'wb') as f:
+            with open(f'solutions/case_{case_number}_solutions.pkl', 'wb') as f:
                 pickle.dump([x_var, y_var, r_var, sol_time], f)
             f.close()
             self.mdl.end()
@@ -511,7 +513,7 @@ class dymaster:
         wy = 500 #weight for super driver
         self.mdl.minimize(self.mdl.sum(self.x[v, k] for v in Vh for k in range(self.maxlen)) + wy*self.y)
         for i in N_e:
-            rn = 0 # check if there is a route visit this node
+            rn = 0  # check if there is a route visit this node
             temp = 0
             for v in Vh:
                 for k in range(len(self.a[v])):
@@ -519,7 +521,7 @@ class dymaster:
                     temp = temp + self.a[v][k][i] * self.x[v, k]
             if rn > 0.1:
                 print(rn)
-                temp = temp +self.y
+                temp = temp + self.y
                 self.mdl.add_constraint(temp == 1.0)
                 print(temp)
         for v in Vh:
@@ -534,7 +536,9 @@ class dymaster:
                 if solution.get_value(self.x[v, k]) > 0.9:
                     self.result.append(self.route[v][k])
                     self.result2.append(self.route2[v][k])
-
+        with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'wb') as f:
+            pickle.dump([self.result, dm, cv, N, N_D, N_S], f)
+        f.close()
         print(self.result)
 
 
@@ -581,7 +585,6 @@ class visualize:
                             plt.plot(x, y, c=color)
                             print(f'route {i} to {j} for vehicle {k}')
 
-
     def show(self):
         plt.show()
 
@@ -620,7 +623,7 @@ def main(triger: int):
 
 if __name__ == "__main__":
     main(1)
-    vis = visualize()
+'''    vis = visualize()
     vis.shownetwork()
     vis.showroutes()
-    vis.show()
+    vis.show()'''
