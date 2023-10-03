@@ -475,7 +475,7 @@ class dynapro:
                             returnstate.append(tpstate)
             self.solutionpoll = returnstate.copy()
             print('====iteration==== {i}'.format(i = self.ite))
-            print(self.solutionpoll)
+            #print(self.solutionpoll)
             return self.rundp(self.solutionpoll)
         else:
             # print("end iteration")
@@ -485,11 +485,9 @@ class dynapro:
 class dymaster:
     def __init__(self, input: list):
         self.a = [[] for i in range(num)]  # v,k,i
-        self.route = [[] for i in range(num)]  # v,k
-        self.route2 = [[] for i in range(num)]
-        print('input')
+        self.route = [[] for i in range(num)]  # v,k all alternative routes for v
+        self.route2 = [[] for i in range(num)] # all underlying routes for alternative routs for v
         for item in input:
-            print(item.S)
             temp = [0.0 for i in range(num)]
             self.route[item.S[1]].append(item.S)
             self.route2[item.S[1]].append(item.route)
@@ -505,25 +503,25 @@ class dymaster:
                 self.maxlen = lent
         self.x_indices = [(v, k) for v in Vh for k in range(self.maxlen)]
         self.x = self.mdl.binary_var_dict(self.x_indices, name='x')
-        self.y = self.mdl.binary_var(name = 'y')
-        self.result = []
-        self.result2 = []
-
+        self.y = self.mdl.binary_var_dict([i for i in N],name = 'y')
+        self.result = [] # result of master problem
+        self.result2 = [] #underlying routs for  result of master problem
+        self.yresult = [sd] # result of super driver
     def masterprob(self):
         wy = 500 #weight for super driver
-        self.mdl.minimize(self.mdl.sum(self.x[v, k] for v in Vh for k in range(self.maxlen)) + wy*self.y)
+        self.mdl.minimize(self.mdl.sum(self.x[v, k] for v in Vh for k in range(self.maxlen)) + wy*self.mdl.sum(self.y[i] for i in N))
         for i in N_e:
-            rn = 0  # check if there is a route visit this node
+            #rn = 0 # check if there is a route visit this node
             temp = 0
             for v in Vh:
                 for k in range(len(self.a[v])):
-                    rn += self.a[v][k][i]
+                    #rn += self.a[v][k][i]
                     temp = temp + self.a[v][k][i] * self.x[v, k]
-            if rn > 0.1:
-                print(rn)
-                temp = temp + self.y
-                self.mdl.add_constraint(temp == 1.0)
-                print(temp)
+            #if rn > 0.1:
+                #print(rn)
+            temp = temp +self.y[i]
+            self.mdl.add_constraint(temp == 1.0)
+            #print(temp)
         for v in Vh:
             self.mdl.add_constraint(self.mdl.sum(self.x[v, k] for k in range(len(self.a[v]))) <= 1.0)
         self.mdl.export_as_lp("masterprob_model")
@@ -536,10 +534,54 @@ class dymaster:
                 if solution.get_value(self.x[v, k]) > 0.9:
                     self.result.append(self.route[v][k])
                     self.result2.append(self.route2[v][k])
+        for i in N:
+            if solution.get_value(self.y[i]) > 0.9:
+                self.yresult.append(i)
         with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'wb') as f:
             pickle.dump([self.result, dm, cv, N, N_D, N_S], f)
         f.close()
         print(self.result)
+        print(self.result2)
+        print('========super driver=========')
+        print(self.yresult)
+    def visualize(self):
+        for i in N_1:
+            plt.plot(x_cord[i], y_cord[i], marker='o', color='r')
+            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+        for i in N_2:
+            plt.plot(x_cord[i], y_cord[i], marker='o', color='y')
+            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+        for i in N_3:
+            plt.plot(x_cord[i], y_cord[i], marker='o', color='g')
+            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+        for i in N_S:
+            plt.plot(x_cord[i], y_cord[i], marker='o', color='b')
+            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+        for i in N_dummy:
+            plt.plot(x_cord[i], y_cord[i], marker='o', color='k')
+            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+        plt.plot(x_cord[sd], y_cord[sd], marker='*', color='m')
+        plt.text(x_cord[sd] + 0.5, y_cord[sd] + 0.5, str(sd))
+        for item in self.result:
+            r = random.random()
+            b = random.random()
+            g = random.random()
+            color = (r, g, b)
+            xcordset = []
+            ycordset = []
+            for i in range(1,len(item)-1):
+                xcordset.append(x_cord[item[i]])
+                ycordset.append(y_cord[item[i]])
+            plt.plot(xcordset,ycordset, c = color)
+        sdx = [] # super driver routes x coordinate
+        sdy = [] # super driver routes y coordinate
+        for i in self.yresult:
+            sdx.append(x_cord[i])
+            sdy.append(y_cord[i])
+        plt.plot(sdx,sdy, c = 'm')
+        plt.show()
+    def endmodel(self):
+        self.mdl.end()
 
 
 class visualize:
@@ -585,6 +627,7 @@ class visualize:
                             plt.plot(x, y, c=color)
                             print(f'route {i} to {j} for vehicle {k}')
 
+
     def show(self):
         plt.show()
 
@@ -603,27 +646,24 @@ def main(triger: int):
     elif triger == 1:
         print("start dynamic programming")
         ts = dynapro()
-        print(ts.solutionpoll)
         start = time.time()
         ts.rundp(ts.solutionpoll)
         end = time.time()
         ite = 0
         for item in ts.candidateState:
-            print(ite)
+            #print(ite)
             ite += 1
-            print(item.S)
-            # print(item.T)
-            # print(item.route)
-        # print(len(ts.candidateState))
         dyma = dymaster(ts.candidateState)
         dyma.masterprob()
         dyma.solve()
+        dyma.visualize()
         print('time for generating routes: ', (end - start) * 10 ** 3, "ms")
+        dyma.endmodel()
 
 
 if __name__ == "__main__":
     main(1)
-'''    vis = visualize()
-    vis.shownetwork()
-    vis.showroutes()
-    vis.show()'''
+    #vis = visualize()
+    #vis.shownetwork()
+    #vis.showroutes()
+    #vis.show()
