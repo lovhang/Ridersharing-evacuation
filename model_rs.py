@@ -541,6 +541,7 @@ class dymaster:
             pickle.dump([self.result, dm, cv, N, N_D, N_S], f)
         f.close()
         print(self.result)
+        print(self.result2)
         print('========super driver=========')
         print(self.yresult)
     def visualize(self):
