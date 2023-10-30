@@ -94,6 +94,8 @@ N_dummy = np.array([0, num - 1])
 
 # Evacuees list
 Ne_cases = [np.union1d(N_1_cases[i], np.union1d(N_2_cases[i], N_3_cases[i])) for i in range(case_count)]
+# Evacuees list 2 and 3
+Ne_cases23 = [np.union1d(N_2_cases[i], N_3_cases[i]) for i in range(case_count)]
 
 # Demand or passenger counts of nodes
 dm_cases = [np.array([0 for _ in range(num)]) for _ in range(case_count)]
@@ -130,6 +132,7 @@ N_3 = N_3_cases[case_number]  # N_3 evacuee
 N_D = N_D_cases[case_number]
 Vh = vh_cases[case_number]  # Driver index (N_1,N_2,N_3,super)
 N_e = Ne_cases[case_number]  # evacuee list, including N_1,N_2,N_3
+N_e23 = Ne_cases23[case_number]  # evacuee list, including N_2,N_3
 dm = dm_cases[case_number]
 cv = cv_cases[case_number]
 T_end = T_end_cases[case_number]
@@ -458,7 +461,7 @@ class dynapro:
 
                 can_node = []
                 S = item.S
-                for _ in N_e:
+                for _ in N_e_23: # Change this one. Union(2,3)
                     if _ not in S:
                         can_node.append(_)
                 for _ in S:
