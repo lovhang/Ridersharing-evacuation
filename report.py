@@ -13,39 +13,63 @@ with open(f'network/linknetwork1_SPMatrixAlt.pkl', 'rb') as f:
 f.close()
 case_number = 3
 with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'rb') as f:
-    solutions, dm, cv, N, N_D, N_S = pickle.load(f)
+    solutions, dm, cv, N, N_D, N_S, EDT = pickle.load(f)
 f.close()
 num = len(cv)
 
+
 #  Calculating the cumulative number of passengers in each vehicle
-passenger = []
+passengerCount = []
 elapsedTime = []
+earliestDepart = []
+waitingTime = []
 for sol in solutions:
+
     # to save the total passengers in a vehicle (solution)
-    passTemp1 = []
-    buffer1 = 0
+    passCounts = []
+    passCount = 0
 
     # to save the elapsed time over nodes of one vehicle (solution)
-    passTemp2 = [0 for _ in range(len(sol))]
-    buffer2 = 0
+    passTimes = [0 for _ in range(len(sol))]
+    passTime = 0
+
+    # To save the waiting time of vehicle (solution) at each node
 
     for i in range(1, len(sol)):
-        buffer1 += dm[sol[i-1]]
-        passTemp1.append(buffer1)
+        # Total number of passengers in the vehicle at each node
+        passCount += dm[sol[i-1]]
+        passCounts.append(passCount)
 
-        buffer2 += tt[sol[i-1]][sol[i]][0]  # not considering different scenarios for now
-        passTemp2[i] = buffer2
+        # Time the vehicle reaches the next node
+        # not considering different scenarios for now
+        passTime += tt[sol[i-1]][sol[i]][0]
+        passTimes[i] = passTime
 
-    passenger.append(passTemp1)
-    elapsedTime.append(passTemp2)
+    # For each solution, generate an array showing the EDT of each node
+    departTime = [EDT[index] for index in sol]
 
+    # calculate Waiting Time
+    waitTime = [0 for _ in sol]
+    for index in range(len(sol)):
+        wait = departTime[index] - passTimes[index]
+        if wait > 0:
+            waitTime[index] = wait
+
+    earliestDepart.append(departTime)
+    elapsedTime.append(passTimes)
+    waitingTime.append(waitTime)
+    passengerCount.append(passCounts)
+'''for i in range(len(solutions)):
+    print(earliestDepart[i], elapsedTime[i], waitingTime[i])'''
 fig_size = 15
+lWidth = 0.5 * fig_size
+lWidthDash = 0.2 * fig_size
 
 class visualize:
     def __int__(self):
         pass
     def shownetwork(self):
-        plt.figure(figsize=(fig_size, fig_size))
+        plt.figure(figsize=(fig_size, fig_size), dpi=200)
         ax = plt.axes(projection='3d')
         for i in N:
             if i in N_S:
@@ -63,39 +87,50 @@ class visualize:
             ax.set_zlabel('Time')
         self.ax = ax
     def showroutes(self):
-        visLimit = 1
+        # Only plot a few vehicles
+        visits = (0, 4)
         ax = self.ax
-        for solI in range(len(solutions)):
+        for solI in visits:
             color = (random.random(), random.random(), random.random())
 
             for j in range(len(solutions[solI]) - 1):
+                # The cordinations here are intended for plotting the routes.
                 x = [x_cord[solutions[solI][j]], x_cord[solutions[solI][j + 1]]]
                 y = [y_cord[solutions[solI][j]], y_cord[solutions[solI][j + 1]]]
-                z = [elapsedTime[solI][j], elapsedTime[solI][j + 1]]
+
+                # Z values are considering the waiting time
+                reachZ = elapsedTime[solI][j]
+                startZ = reachZ + waitingTime[solI][j]
+                endZ = elapsedTime[solI][j + 1]
+                z = [startZ, endZ]
+
 
                 if j == 0 or j == len(solutions[solI])-2:   # Plot the line with dashed style
-                    if j == len(solutions[solI])-2:  # Set label for the vehicle and plot the dummy node
-                        ax.plot3D(x, y, z, c=color, linewidth=fig_size, alpha=0.4, linestyle=':',
+                    # Set label for the vehicle and plot the dummy node
+                    if j == len(solutions[solI])-2:
+                        ax.plot3D(x, y, z, c=color, linewidth=lWidthDash, alpha=0.4, linestyle=':',
                                   label=f'Vehicle {solutions[solI][1]}')
-                        ax.plot3D(x[1], y[1], z[1], 'rD', markersize=fig_size)
+                        ax.plot3D(x[1], y[1], z[1], 'rD', markersize=lWidth)
 
                     else:  # Plot the dashed line from 0 node to the vehicle
-                        ax.plot3D(x, y, z, c=color, linewidth=fig_size, alpha=0.4, linestyle=':')
+                        ax.plot3D(x, y, z, c=color, linewidth=lWidthDash, alpha=0.4, linestyle=':')
                     ax.plot3D(x, y, 0, c=color, alpha=0.3)
 
-                else:  # Plot the solid line for the normal trip route
-                    ax.plot3D(x, y, z, c=color, linewidth=fig_size, alpha=0.4)
-                    ax.plot3D(x, y, 0, c=color, alpha=0.3)
+                # Plot the solid line for the normal trip route
+                else:
+                    ax.plot3D(x, y, z, c=color, linewidth=lWidth, alpha=0.4)  # Normal 3D Route
+                    # Waiting 3D Route
+                    ax.plot3D([x[0], x[0]], [y[0], y[0]], [reachZ, startZ],
+                              c='red', linewidth=lWidth, alpha=0.4)
+                    ax.plot3D(x, y, 0, c=color, alpha=0.3)  # 2D route
 
                 # Generate the incremental passengers size marker
                 z_rate = 0
-                for _ in range(passenger[solI][j]):
-                    ax.plot3D(x_cord[solutions[solI][j]], y_cord[solutions[solI][j]], elapsedTime[solI][j] + 12 * z_rate,
+                for _ in range(passengerCount[solI][j]):
+                    ax.plot3D(x_cord[solutions[solI][j]], y_cord[solutions[solI][j]], z[0] + 6 * z_rate,
                               marker='^', color=color, markersize=fig_size, markeredgecolor='black')
-                    z_rate += 1
-            # Only plot a few vehicles
-            if solI == visLimit:
-                break
+                    z_rate += 0.5
+
     def showplot(self):
         plt.legend()
         plt.savefig(f'figures/Case_{case_number}_3D_plot.jpg', bbox_inches='tight')
