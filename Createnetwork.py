@@ -7,7 +7,7 @@ import math
 import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
-
+from tqdm import tqdm
 
 class specifcnw:
     """
@@ -258,48 +258,47 @@ class ShortestPath:
         UV = nodes_list
         UV.remove(origin)
         UV.insert(0, origin)
-
+        C = origin
         M = self.M
+
+        # Dij is saving all the information for the shortest paths
+        # Dij_copy_0 and 1 are saving all the unvisited nodes (0 saves the node number and 1 saves the shortest path)
+        # Dij_copy_0 and 1 are updated and every time one node is visited, it is removed form the list
         Dij = np.array([UV, [M for _ in UV], [0 for _ in UV]]).astype(int)
         Dij[1][0] = 0
-        C_index = origin  # to avoid error: reference before assignment
-        C = 0
+        Dij_copy_0 = np.array(copy.copy(Dij[0]))
+        Dij_copy_1 = np.array(copy.copy(Dij[1]))
 
-        s = time.time()
-        while len(UV) > 1:
-            # The time bottleneck is here
-            # Find the node from UV with the minimum distance from origin, except for 0
-            min_distance = M
-            UV_copy = copy.copy(UV)
-            for node in UV_copy:
-                index = np.where(Dij[0] == node)[0][0]
-                if Dij[1][index] < min_distance:
-                    min_distance = Dij[1][index]
-                    C = int(Dij[0][index])
-                    C_index = index
-            # output: C as the selected node
+        while len(Dij_copy_0) > 1:
 
-            # Find all connections with C from UV
-            # tt_from_C shows the travel time from C to each node in UV
-            # if UV = [3, 5, 7], and tt_from_C = [12, M, 6],
-            # then travel time from C to 3 is 12, to 5 is infeasible, and to 7 is 6'''
-            tt_from_C = [tvt[C][i] for i in UV]
+            # Find the node from Dij_copy_1 with the minimum distance from origin, except for C
+            C_index_in_copy = np.argmin(Dij_copy_1)
+            C = Dij_copy_0[C_index_in_copy]
+            C_index = np.where(Dij[0] == C)[0][0]
 
-            # For each feasible connection, find the path through C
-            # Compare it with the current shortest path to each UV node
+            # Find the travel times from selected C to all unvisited nodes
+            # save those nodes that are connected feasibly with C
+            tt_from_C = [tvt[C][i] for i in Dij_copy_0]
+            feasible = np.where(tt_from_C < M)[0]  # index of nodes that has tvt < M, referring to a node in Dij_copy_0
 
-            feasible = np.where(tt_from_C < M)[0]
             if len(feasible) != 0:
+                # what if the lenght of feasible is 0?
+                # in this case, we need to find a new C because it means this node has no other connections with others
+                # and it is the deadend
                 for i in feasible:
                     new_path = Dij[1][C_index] + tt_from_C[i]
-                    current_path = Dij[1][np.where(Dij[0] == UV[i])[0][0]]
+                    current_path = Dij[1][np.where(Dij[0] == Dij_copy_0[i])[0][0]]
+                    feasible_index = np.where(Dij[0] == Dij_copy_0[i])[0][0]
                     if new_path <= current_path:
                         # New shortest path. Update Dij
-                        Dij[1][np.where(Dij[0] == UV[i])[0][0]] = new_path
-                        Dij[2][np.where(Dij[0] == UV[i])[0][0]] = C
-            UV.remove(C)
-            #print('Second', time.time() - s)
-        print('First', time.time() - s)
+                        Dij[1][feasible_index] = new_path
+                        Dij[2][feasible_index] = C
+
+                        Dij_copy_1[np.where(Dij_copy_0 == i)[0]] = new_path
+
+            Dij_copy_0 = np.delete(Dij_copy_0, C_index_in_copy)
+            Dij_copy_1 = np.delete(Dij_copy_1, C_index_in_copy)
+
         return Dij
 
     # ===============================   Farzane Added: September 18, 2023   =====================================
@@ -396,24 +395,29 @@ class ShortestPath:
     def getSpMatrix(self):
         ttm = [[self.M * 2 for j in range(self.num)] for j in range(self.num)]  # travel time matrix
         spm = [[j for j in range(self.num)] for j in range(self.num)]  # shortest path matrix
+
+        dij_time = []
+        getpath_time = []
         nodes = list(range(self.num))
-        for i in range(self.num):
-            print(f'Node {i} is active')
-            s=time.time()
+        for i in tqdm(range(self.num)):
+            s = time.time()
             dij = self.getDijTable(list(range(self.num)), i, self.tvt)
-            f=time.time()
-            print(f'dij takes {f-s}')
+            f = time.time()
+            dij_time.append(f-s)
             for j in range(i, self.num):
                 if i == j:
                     ttm[i][i] = [self.M]
                     spm[i][i] = [i]
                 else:
+                    s = time.time()
                     path, travel_time = self.getPath(dij, j)
+                    f = time.time()
+                    getpath_time.append(f-s)
                     ttm[i][j] = [travel_time]
                     ttm[j][i] = [travel_time]
                     spm[i][j] = [path]
                     spm[j][i] = [path[::-1]]
-            print(f'getpath takes {time.time() - f}')
+        print(f'Dij takes {np.mean(dij_time):0.3f}, and getpaht take {np.mean(getpath_time):0.3f}')
         return spm, ttm
 
 
@@ -469,12 +473,12 @@ if __name__ == '__main__':
     scenario_times = [30, 100]
     scenario_edges = ([3, 16], [16, 12])
 
-    #sp = ShortestPath("network/linknetwork1.pkl")
-    sp = ShortestPath("realcaseNetwork/case1.pkl")
+    sp = ShortestPath("network/linknetwork1.pkl")
+    #sp = ShortestPath("realcaseNetwork/case1.pkl")
     spp, spt = sp.getSpMatrix()  # travel time matrix and corresponding shortest path matrix
-    print('Done.\n', spp[2])
-    '''spp_alt, spt_alt, tvt, con = sp.detAlternative(spp, spt, scenario_edges, scenario_times)  # update based the malfunction time
+
+    spp_alt, spt_alt, tvt, con = sp.detAlternative(spp, spt, scenario_edges, scenario_times)  # update based the malfunction time
     with open('network/linknetwork1_SPMatrixAlt.pkl', 'wb') as f:
         pickle.dump([spp_alt, spt_alt, tvt, scenario_edges, scenario_times], f)
-    f.close()'''
+    f.close()
     # =================================== September 18 2023 ===================================
