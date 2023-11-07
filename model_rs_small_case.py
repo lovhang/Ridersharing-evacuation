@@ -10,15 +10,27 @@ import time
 # read network from pkl and transfer it to t_ij^m
 num = 21
 sd = num - 2  # super driver, num-1 is n+1, num-2 is super driver location
-scenario = 3
+scenario = 1
 sc_set = [i for i in range(scenario)]
 
 with open('network/linknetwork1.pkl', 'rb') as handle:
     x_cord, y_cord, dis, con, tvt = pickle.load(handle)
 handle.close()
-with open(f'network/linknetwork1_SPMatrixAlt.pkl', 'rb') as handle:
-    sp, tt, tvt, SceEdges, ScenTimes = pickle.load(handle)
-handle.close()
+
+malfunction = True
+if malfunction:
+    with open('network/linknetwork1_SPMatrixAlt.pkl', 'rb') as handle:
+        sp, tt, tvt = pickle.load(handle)
+    handle.close()
+    with open('network/malfunction_road_info.pkl', 'rb') as handle:
+        SceEdges, ScenTimes = pickle.load(handle)
+    handle.close()
+else:
+    with open('network/linknetwork1_SPMatrix.pkl', 'rb') as handle:
+        sp, tt, tvt = pickle.load(handle)
+        ScenTimes = []
+    handle.close()
+
 for i in range(0, num):
     for k in sc_set:
         tt[0][i][k] = 1.0  # Zero node to all nodes for all scenarios
@@ -55,7 +67,7 @@ N_S = np.array([1, 8])  # Shelters nodes
 
 N_0_cases = [N_cases[i][1:-1] for i in range(case_count)]  # N1, N2, N3
 
-# Destinations shelter for nodes
+# Destination shelter for nodes
 N_D_cases = [np.array([0 for _ in range(num)]) for _ in range(case_count)]
 for case in range(case_count):
     for node in range(num):
@@ -523,8 +535,16 @@ class dymaster:
         for i in N:
             if solution.get_value(self.y[i]) > 0.9:
                 self.yresult.append(i)
-        with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'wb') as handle:
-            pickle.dump([self.result, dm, cv, N, N_D, N_S, EDT], handle)
+
+
+        # Save solution data
+        what_to_save = [self.result, dm, cv, N, N_1, N_2, N_3, N_S, EDT]
+        if malfunction:
+            with open(f'solutions/case_{case_number}_solutions_dp.pkl', 'wb') as handle:
+                pickle.dump(what_to_save, handle)
+        else:
+            with open(f'solutions/case_{case_number}_solutions_dp_nomal.pkl', 'wb') as handle:
+                pickle.dump(what_to_save, handle)
         handle.close()
         print(self.result)
         

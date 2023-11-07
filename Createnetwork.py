@@ -155,6 +155,7 @@ class readnw:
         self.connect[12][16] = 1;
         self.connect[2][19] = 1;
         self.connect[2][5] = 1;
+        self.connect[7][15] = 1;
         self.connect[10][17] = 1;
         self.connect[7][13] = 1;
         self.connect[8][15] = 1;
@@ -225,8 +226,6 @@ class visualize:
     def __init__(self, adr: str):
         with open(adr, 'rb') as f:
             self.x_cord, self.y_cord, self.dist, self.connect, self.tt = pickle.load(f)
-        print(self.tt[10][17])
-        print(self.tt[17][10])
         f.close()
 
     def showplt(self):
@@ -237,6 +236,9 @@ class visualize:
                 if j > i and self.connect[i][j] > 0.1:
                     # print(0)
                     plt.plot([self.x_cord[i], self.x_cord[j]], [self.y_cord[i], self.y_cord[j]], color='black')
+                    plt.text((self.x_cord[i]+self.x_cord[j])/2, (self.y_cord[i]+self.y_cord[j])/2, s=f'{self.tt[i][j]}',
+                             color='red')
+        plt.show()
         #
 
     def save(self, adr: str):
@@ -268,40 +270,54 @@ class ShortestPath:
         Dij[1][0] = 0
         Dij_copy_0 = np.array(copy.copy(Dij[0]))
         Dij_copy_1 = np.array(copy.copy(Dij[1]))
+        Dij_copy_index_Dij = np.array([np.where(Dij[0] == node)[0][0] for node in Dij_copy_0])
 
         while len(Dij_copy_0) > 1:
-
-            # Find the node from Dij_copy_1 with the minimum distance from origin, except for C
+            # Step 1: Find the node from Dij_copy_1 with the minimum distance from origin, except for C
             C_index_in_copy = np.argmin(Dij_copy_1)
             C = Dij_copy_0[C_index_in_copy]
             C_index = np.where(Dij[0] == C)[0][0]
 
-            # Find the travel times from selected C to all unvisited nodes
-            # save those nodes that are connected feasibly with C
+            Dij_copy_0 = np.delete(Dij_copy_0, C_index_in_copy)
+            Dij_copy_1 = np.delete(Dij_copy_1, C_index_in_copy)
+            Dij_copy_index_Dij = np.delete(Dij_copy_index_Dij, C_index_in_copy)
+
+            # Step 2: Find the travel times from selected C to all unvisited nodes
             tt_from_C = [tvt[C][i] for i in Dij_copy_0]
+
             feasible = np.where(tt_from_C < M)[0]  # index of nodes that has tvt < M, referring to a node in Dij_copy_0
 
+            # Step 3: Update the paths
             if len(feasible) != 0:
                 # what if the lenght of feasible is 0?
                 # in this case, we need to find a new C because it means this node has no other connections with others
-                # and it is the deadend
+                # and it is the dead-end
                 for i in feasible:
                     new_path = Dij[1][C_index] + tt_from_C[i]
-                    current_path = Dij[1][np.where(Dij[0] == Dij_copy_0[i])[0][0]]
-                    feasible_index = np.where(Dij[0] == Dij_copy_0[i])[0][0]
-                    if new_path <= current_path:
+                    current_path = Dij[1][Dij_copy_index_Dij[i]]
+                    if new_path < current_path:
                         # New shortest path. Update Dij
-                        Dij[1][feasible_index] = new_path
-                        Dij[2][feasible_index] = C
-
-                        Dij_copy_1[np.where(Dij_copy_0 == i)[0]] = new_path
-
-            Dij_copy_0 = np.delete(Dij_copy_0, C_index_in_copy)
-            Dij_copy_1 = np.delete(Dij_copy_1, C_index_in_copy)
-
+                        Dij[1][Dij_copy_index_Dij[i]] = new_path
+                        Dij[2][Dij_copy_index_Dij[i]] = C
+                        Dij_copy_1[i] = new_path
         return Dij
 
-    # ===============================   Farzane Added: September 18, 2023   =====================================
+    def getPath(self, dij, destination):
+        p = [destination]
+        traveler = destination
+        traveltime = dij[1][np.where(dij[0] == destination)[0][0]]
+
+        # if there is a path between origin and destination, find it. O.W. let it go.
+        if dij[1][np.where(dij[0] == destination)[0][0]] < self.M:
+            # find the path using dij
+            while traveler != int(dij[0][0]):
+                traveler_index = int(np.where(dij[0] == traveler)[0][0])
+                p.append(dij[2][traveler_index])
+                traveler = dij[2][traveler_index]
+            return p[::-1], traveltime
+        else:
+            return [0], self.M
+
     def detAlternative(self, shortest_path_matrix, shortest_path_travel_time, malfunc_edges, malfunc_time):
         # copy travel time to modification
         tvt = copy.deepcopy(self.tvt)
@@ -334,9 +350,9 @@ class ShortestPath:
                             top_index = indicator.index(malfunc_edges[m_index][0])
                             bottom_index = indicator.index(malfunc_edges[m_index][1])
                             if top_index < bottom_index:
-                                time_reach_m = cur_dij[1][cur_dij[0].index(malfunc_edges[m_index][0])]
+                                time_reach_m = cur_dij[1][np.where(cur_dij[0] == malfunc_edges[m_index][0])[0][0]]
                             else:
-                                time_reach_m = cur_dij[1][cur_dij[0].index(malfunc_edges[m_index][1])]
+                                time_reach_m = cur_dij[1][np.where(cur_dij[0] == malfunc_edges[m_index][1])[0][0]]
                             if time_reach_m + tvt[i][j] > malfunc_time[m_index]:
                                 # Yes, so remove the access on malfunctioned edge and find an alternative path.
                                 flag = 1
@@ -375,110 +391,54 @@ class ShortestPath:
         # End of loop over malfunction edges
         return shortest_path_matrix, shortest_path_travel_time, self.tvt, self.con
 
-    # ===============================   September 18, 2023   =====================================
-    def getPath(self, dij, destination):
-        p = [destination]
-        traveler = destination
-        traveltime = dij[1][np.where(dij[0] == destination)[0][0]]
-
-        # if there is a path between origin and destination, find it. O.W. let it go.
-        if dij[1][np.where(dij[0] == destination)[0][0]] < self.M:
-            # find the path using dij
-            while traveler != int(dij[0][0]):
-                traveler_index = int(np.where(dij[0] == traveler)[0][0])
-                p.append(dij[2][traveler_index])
-                traveler = dij[2][traveler_index]
-            return p[::-1], traveltime
-        else:
-            return [0], self.M
-
     def getSpMatrix(self):
         ttm = [[self.M * 2 for j in range(self.num)] for j in range(self.num)]  # travel time matrix
         spm = [[j for j in range(self.num)] for j in range(self.num)]  # shortest path matrix
 
-        dij_time = []
-        getpath_time = []
-        nodes = list(range(self.num))
         for i in tqdm(range(self.num)):
-            s = time.time()
             dij = self.getDijTable(list(range(self.num)), i, self.tvt)
-            f = time.time()
-            dij_time.append(f-s)
             for j in range(i, self.num):
                 if i == j:
                     ttm[i][i] = [self.M]
                     spm[i][i] = [i]
                 else:
-                    s = time.time()
                     path, travel_time = self.getPath(dij, j)
-                    f = time.time()
-                    getpath_time.append(f-s)
                     ttm[i][j] = [travel_time]
                     ttm[j][i] = [travel_time]
                     spm[i][j] = [path]
                     spm[j][i] = [path[::-1]]
-        print(f'Dij takes {np.mean(dij_time):0.3f}, and getpaht take {np.mean(getpath_time):0.3f}')
-        return spm, ttm
+        return spm, ttm, self.tvt
 
 
 if __name__ == '__main__':
-    # randtrig = generalnw()
-    # randtrig.gennwcord(30, "cord_40.pkl")
-    # randtrig.readcord("network/cord3.pkl")
-    # readnw("network1.pkl")
-    # spctrig = specifcnw()
-    # spctrig.savenw("network/network1.pkl")
-    # Cordchange = manipulateCord("network/cord3.pkl")
-    # rdtrig = readnw("network/cord3.pkl")
-    # rdtrig.createnw("network/linknetwork1.pkl")
-    # rdtrig.probset("network/network1_s.pkl")
-    # with open("network/linknetwork1.pkl", 'rb') as f:
-    # connect, tt = pickle.load(f)
-    # print(connect)
-    # print(tt)
-    # with open('realnetwork.pkl', 'rb') as f:
-    #   connect, tt = pickle.load(f)
-    # f.close()
-    # networkchange = manipulateNetwork("network/linknetwork1.pkl")
-    # networkchange.del_link(2,5)
-    # networkchange.save("network/linknetwork1_0.pkl")
-
-    # ===============visualize network==================
-    # visul = visualize("network/linknetwork1_0.pkl")
-    # visul.showplt()
-    # visul.save(f"network/linknetwork1_0.png")
-
-    # =================================== Farzane Added ===================================
-    # sp = ShortestPath("network/linknetwork1.pkl")
-    # print(sp.con)
-    # print(sp.tvt)
-    # testing the functions in Shortest Path class
-    # start = 1  # origin
-    # finish = 8 # destination
-
-    # Dij0 = sp.getDijTable(range(21), start)  # gets the nodes and the origin, return the Dij table
-    # for i in range(21):
-    #  finish = i
-    # path, travel_time = sp.getPath(Dij0, finish)  # gets Dij and destination, returns the shortest path and distance
-
-    # print(f'Path from {start} to {finish} is {path} with travel time {travel_time}\n')
-    # print(f'Dij Table: {Dij0}')
-    # =================================== Generate Shortest to all Nodes ============
 
     '''
     We give the algorithm the list of mal-functioned edges (malfunc_edge) and the time they malfunction (malfunc_time).
-    For example: malfunc_edge = [(12, 4), (10, 17)] and malfunc_time = [10, 30] menas edge (12,4) becomes out of service
+    For example: malfunc_edge = [(12, 4), (10, 17)] and malfunc_time = [10, 30] means edge (12,4) becomes out of service
     at time 10 and edge (10, 17) at time 30.
     '''
-    scenario_times = [30, 100]
-    scenario_edges = ([3, 16], [16, 12])
+    scenario_times = [89]
+    scenario_edges = [[16, 12]]
 
-    sp = ShortestPath("network/linknetwork1.pkl")
-    #sp = ShortestPath("realcaseNetwork/case1.pkl")
-    spp, spt = sp.getSpMatrix()  # travel time matrix and corresponding shortest path matrix
-
-    spp_alt, spt_alt, tvt, con = sp.detAlternative(spp, spt, scenario_edges, scenario_times)  # update based the malfunction time
-    with open('network/linknetwork1_SPMatrixAlt.pkl', 'wb') as f:
-        pickle.dump([spp_alt, spt_alt, tvt, scenario_edges, scenario_times], f)
+    with open('network/malfunction_road_info.pkl', 'wb') as f:
+        pickle.dump([scenario_edges, scenario_times], f)
     f.close()
-    # =================================== September 18 2023 ===================================
+
+    real_case = False
+    if real_case:
+        sp = ShortestPath("realcaseNetwork/case1.pkl")
+    else:
+        sp = ShortestPath("network/linknetwork1.pkl")
+    start = time.time()
+    spp, spt, tvt = sp.getSpMatrix()  # travel time matrix and corresponding shortest path matrix
+    middle = time.time()
+    spp_alt, spt_alt, tvt, con = sp.detAlternative(spp, spt, scenario_edges, scenario_times)
+    print(f'Shortest Path takes {middle-start} seconds. Finding Alternative path takes {time.time()-middle} seconds')
+
+    with open('network/linknetwork1_SPMatrix.pkl', 'wb') as f:
+        pickle.dump([spp, spt, tvt], f)
+    f.close()
+    with open('network/linknetwork1_SPMatrixAlt.pkl', 'wb') as f:
+        pickle.dump([spp_alt, spt_alt, tvt], f)
+    f.close()
+
