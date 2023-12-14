@@ -9,15 +9,23 @@ x_max = -94.34020794
 y_min = 28.93832832
 y_max = 30.88910535
 
-demand_data = read_csv(r'G:\My Drive\postdoc\ridersharing\demand_location.csv')
+demand_data = read_csv(r'evacueeinfo\Zone_Coastal_eva1002_simulation_a0.03_b0.5_g0.2.csv')
 x_demand_data = demand_data['x_cord'].tolist()
 y_demand_data = demand_data['y_cord'].tolist()
-near_demand_node = demand_data['NEAR_FID'].tolist()
-
-shelter_data = read_csv(r'G:\My Drive\postdoc\ridersharing\shelter_location.csv')
+near_demand_node = demand_data['road_ID'].tolist()
+evacuee_type = demand_data['type'].tolist()
+depature_time = demand_data['departure_time'].tolist()
+resident_count = demand_data['resident_count'].tolist()
+print(len(x_demand_data))
+shelter_data = read_csv(r'evacueeinfo\shelter_location.csv')
 x_shelter_data = shelter_data['x_cord'].tolist()
 y_shelter_data = shelter_data['y_cord'].tolist()
 near_shelter_node = shelter_data['JOIN_FID'].tolist()
+
+x_min = min(min(x_demand_data), min(x_shelter_data))-0.01
+y_min = min(min(y_demand_data), min(y_shelter_data))-0.01
+x_max = max(max(x_demand_data), max(x_shelter_data))+0.01
+y_max = max(max(y_demand_data), max(y_shelter_data))+0.01
 
 x_cord = [x_min]
 y_cord = [y_min]
@@ -32,13 +40,13 @@ for _ in y_demand_data:
 for _ in y_shelter_data:
     y_cord.append(_)
 for _ in near_demand_node:
-    near_node.append(_)
+    near_node.append(int(_))
 for _ in near_shelter_node:
-    near_node.append(_)
+    near_node.append(int(_))
 x_cord.append(x_max)
 y_cord.append(y_max)
 near_node.append(len(near_node))
-
+ttnum = len(x_cord)
 scenario = 2
 sc_set = [i for i in range(scenario)]
 ttm = np.array([None for i in range(scenario)])
@@ -71,6 +79,7 @@ for i in range(1,new_num-1):
     o_node = near_node[i]
     for j in range(1,new_num-1):
         d_node = near_node[j]
+        #print(o_node, d_node)
         if o_node == d_node:
             for k in sc_set:
                 ttn[i][j][k] = service_time
@@ -90,11 +99,13 @@ for i in range(0, new_num):
         ttn[i][i][k] = 1.0  # node to itself for all scenarios
         ttn[i][-1][k] = 1.0  # node to last dummy node
         ttn[-1][i][k] = 1.0  # last dummy node to all node
-print(ttn[165][1007])
-print(near_node[164])
-print(near_node[1007])
+#print(ttn[165][1007])
+#print(near_node[164])
+#print(near_node[1007])
 #print(ttn[838][725])
 #print(tt[411][408][0])
-with open('realcaseNetwork/1000demand_SPM.pkl', 'wb') as f:
-        pickle.dump([x_cord, y_cord, ttn, spn], f)
+print(len(evacuee_type))
+print(len(x_cord))
+with open('case/casenum{n}_x_y_ttn_spn_type_dtime_count.pkl'.format(n = ttnum), 'wb') as f:
+        pickle.dump([x_cord, y_cord, ttn, spn, evacuee_type, depature_time, resident_count], f)
 f.close()

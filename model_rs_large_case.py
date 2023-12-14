@@ -9,20 +9,22 @@ import time
 from tqdm import tqdm
 
 # read network from pkl and transfer it to t_ij^m
-num = 21
-sd = num - 2  # super driver, num-1 is n+1, num-2 is super driver location
-scenario = 3
-sc_set = [i for i in range(scenario)]
+num=0 #initiate num
+sd = 0 # initiate sd
+sc_set = [] # initaie sc_set
 Xiaohang = 0
 if Xiaohang == 0:
-    with open('realcaseNetwork/1000demand_SPM.pkl', 'rb') as f:
-        x_cord, y_cord, tt, sp = pickle.load(f)
-    f.close()
+    #with open('realcaseNetwork/1000demand_SPM.pkl', 'rb') as f:
+        #x_cord, y_cord, tt, sp = pickle.load(f)
+    #f.close()
+    with open('case/casenum343_x_y_ttn_spn_type_dtime_count.pkl', 'rb') as f:
+         x_cord, y_cord, tt, sp, type, depart_time, passenger_count = pickle.load(f)
+         f.close()
     #=========add dummy node 0 and n+1=============
-    x_min = -96.82036511
-    x_max = -94.34020794
-    y_min = 28.93832832
-    y_max = 30.88910535
+    x_min = x_cord[0]
+    x_max = x_cord[-1]
+    y_min = y_cord[0]
+    y_max = y_cord[-1]
     num = len(x_cord)
     #print(num)
     #sd = num-2
@@ -35,18 +37,34 @@ if Xiaohang == 0:
     N_S= np.array(N[-2:-9:-1])
     sd = N[-9]
     #N_1 = np.array(N[1:10])  # N_1 driver
-    N_1 = np.array(N[1:300])
-    N_2 = np.array(N[300:600])
-    #N_2 = np.array([])
-    N_3 = np.array(N[600:-9])
-    #N_3 = np.array([])
+    n_1 = []
+    n_2 = []
+    n_3 = []
+    for i in range(len(type)-1): #last one is super driver
+        if type[i] == 1:
+            n_1.append(i+1)
+        elif type[i] == 2:
+            n_2.append(i+1)
+        elif type[i] == 0:
+            n_3.append(i+1)
+        else:
+            print("exceptional type!")
+            break
+    N_1 = np.array(n_1)
+    N_2 = np.array(n_2)
+    N_3 = np.array(n_3)
     N_D = np.array([0 for i in range(0,num)])
     N_dummy = np.array([0, num - 1])
+    print(len(N))
+    print(len(N_1))
+    print(len(N_2))
+    print(len(N_3))
+    print(N_D)
+    print(N_dummy)
     for i in range(0, len(N_D)):
         N_D[i] = random.choice(N_S)
     #print(N_D)
-    st1=360
-    ScenTimes = [st1,1000]
+    ScenTimes = [360,1000]
     Vh = []  # Driver index (N_1,N_2,N_3,super)
     for item in N_1:
         Vh.append(item)
@@ -68,12 +86,14 @@ if Xiaohang == 0:
     N_23 = np.sort(N_23)
     #Vh = np.array([])
     dm = np.array([0.0 for i in N])
-    dm_seed = random.choices(range(1,3),k=num)
+    #dm_seed = random.choices(range(1,3),k=num)
+    for i in range(len(passenger_count)):
+        dm[i+1] = passenger_count[i]
+
     cv = np.array([0.0 for i in N])
-    cv_seed = random.choices(range(3,5),k=num)
-    for i in N_e:
-        dm[i] = dm_seed[i]
-        cv[i] = cv_seed[i]
+    for i in range(0,num):
+        cv[i] = random.randint(3,6)
+    #cv_seed = random.choices(range(3,5),k=num)
     T_end = 1000
     #sec_T = [500,1000]
     #cenTimes.append(T_end)
@@ -82,10 +102,14 @@ if Xiaohang == 0:
     LDP = np.array([T_end for i in range(0, num)])  # latest departure time, the time location is affected
     EDP = np.array([0 for i in range(0, num)])  # Earliest departure time
     time_window = np.random.uniform(30,60,num) # time window uniformly distributed
-    for i in range(0,num):
-        temp = random.uniform(0,720)
-        EDP[i] = temp
-        LDP[i] = temp+time_window[i]
+    for i in range(len(depart_time)):
+        EDP[i+1] = depart_time[i]
+        LDP[i+1] = EDP[i+1] + time_window[i]
+    #for i in range(0,num):
+     #   temp = random.uniform(0,720)
+      #  EDP[i] = temp
+       # LDP[i] = temp + time_window[i]
+
     DT = np.array([0 for i in range(0, num)])  # Detour time
     dtrate = 1.5 #detour rate
     heuristic_ratio = 1.2 # should less than detour ratio
@@ -97,6 +121,7 @@ if Xiaohang == 0:
     min_flex_interval = 10 # minmum flexible time interval for per passenger picked up.
     #for i in N_1:
         #print(EDP[i], LDP[i], DT[i], tt[i][N_D[i]])
+
 else:
     with open('network/linknetwork1.pkl', 'rb') as f:
         x_cord, y_cord, dis, con, tvt = pickle.load(f)
