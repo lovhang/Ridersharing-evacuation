@@ -112,12 +112,9 @@ if Xiaohang == 0:
 
     DT = np.array([0 for i in range(0, num)])  # Detour time
     dtrate = 1.5 #detour rate
-    heuristic_ratio = 1.2 # should less than detour ratio
+    heuristic_ratio = 1.5 # should less than detour ratio
     for i in N_e:
-        for k in range(len(ScenTimes)):
-            if (EDP[i]+LDP[i])/2 + tt[i][N_D[i]][k] <=ScenTimes[k]: # if expected arrival time is less then scenario time
-                DT[i] = tt[i][N_D[i]][k]*dtrate
-                break
+        DT[i] = tt[i][N_D[i]][0]*round(random.uniform(11,15))/10 #detour time based on shortest path time
     min_flex_interval = 10 # minmum flexible time interval for per passenger picked up.
     #for i in N_1:
         #print(EDP[i], LDP[i], DT[i], tt[i][N_D[i]])
