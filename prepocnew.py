@@ -9,7 +9,7 @@ x_max = -94.34020794
 y_min = 28.93832832
 y_max = 30.88910535
 
-demand_data = read_csv(r'evacueeinfo\Zone_Coastal_eva1002_simulation_a0.03_b0.5_g0.2.csv')
+demand_data = read_csv(r'evacueeinfo\Zone_Coastal_eva1002_simulation_a0.03_b0.6_g0.4.csv')
 x_demand_data = demand_data['x_cord'].tolist()
 y_demand_data = demand_data['y_cord'].tolist()
 near_demand_node = demand_data['road_ID'].tolist()

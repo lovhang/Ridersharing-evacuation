@@ -754,29 +754,39 @@ class dymaster:
         with open('realcaseNetwork/result_1.pkl', 'wb') as f:
             pickle.dump([self.result,self.result2], f)
             f.close()
+        print("number of driver: ", len(N_1))
+        print("number of flexible driver: ", len(N_2))
+        print("number of passenger", len(N_3))
         print("number of car in use: {num}".format(num = num_car))
-        print(self.result)
-        print(self.result2)
-        print(self.result3)
+        print(self.result[1])
+        print(self.result2[1])
+        print(self.result3[1])
         print('========super driver=========')
         print(self.yresult)
-        #print(len(self.yresult))
+        print('========number of people picked by super driver=========')
+        print(len(self.yresult))
+        num_altpath = [0 for i in range(scenario)]
+        for route in self.result3:
+            for link in route:
+                num_altpath[link] += 1
+        for i in range(len(num_altpath)):
+            print("number of alternative path {i} :".format(i=i), num_altpath[i])
     def plotmap(self):
         for i in N_1:
             plt.plot(x_cord[i], y_cord[i], marker='o', color='r')
-            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+            #plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
         for i in N_2:
             plt.plot(x_cord[i], y_cord[i], marker='o', color='y')
-            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+            #plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
         for i in N_3:
             plt.plot(x_cord[i], y_cord[i], marker='o', color='g')
-            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+            #plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
         for i in N_S:
             plt.plot(x_cord[i], y_cord[i], marker='o', color='b')
-            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+            #plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
         for i in N_dummy:
             plt.plot(x_cord[i], y_cord[i], marker='o', color='k')
-            plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
+            #plt.text(x_cord[i] + 0.5, y_cord[i] + 0.5, "{i}({j})".format(i=i, j=int(N_D[i])))
         plt.plot(x_cord[sd], y_cord[sd], marker='*', color='m')
         #plt.text(x_cord[sd] + 0.5, y_cord[sd] + 0.5, str(sd))
     def plotroute(self):
@@ -804,7 +814,6 @@ class dymaster:
             for j in range(1, len(self.result[i]) - 2):
                 node1 = self.result[i][j]
                 node2 = self.result[i][j+1]
-                print(self.result3[i][j-1])
                 if self.result3[i][j-1] == 0:
                     plt.plot(np.array([x_cord[node1],x_cord[node2]]),np.array([y_cord[node1],y_cord[node2]]), c = color, ls = 'solid' )
                 else:
@@ -887,8 +896,8 @@ def main(triger: int):
         dyma = dymaster(ts.candidateState)
         dyma.masterprob()
         dyma.solve()
-        #dyma.plotmap()
-        #dyma.plotalroute()
+        dyma.plotmap()
+        dyma.plotaltroute()
         print('time for generating routes: ', (end - start) * 10 ** 3, "ms")
         dyma.endmodel()
 
