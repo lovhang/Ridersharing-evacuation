@@ -13,226 +13,115 @@ num=0 #initiate num
 sd = 0 # initiate sd
 sc_set = [] # initaie sc_set
 Xiaohang = 0
-if Xiaohang == 0:
-    #with open('realcaseNetwork/1000demand_SPM.pkl', 'rb') as f:
-        #x_cord, y_cord, tt, sp = pickle.load(f)
-    #f.close()
-    with open('case/casenum343_x_y_ttn_spn_type_dtime_count.pkl', 'rb') as f:
-         x_cord, y_cord, tt, sp, type, depart_time, passenger_count = pickle.load(f)
-         f.close()
-    #=========add dummy node 0 and n+1=============
-    x_min = x_cord[0]
-    x_max = x_cord[-1]
-    y_min = y_cord[0]
-    y_max = y_cord[-1]
-    num = len(x_cord)
-    #print(num)
-    #sd = num-2
-    scenario = 2
-    sc_set = [i for i in range(scenario)]
-    bigM = 10000  # set bigM to the ij that do not have alternative path so that x_ij^vm no going to select this path
-    #print(np.shape(tt))
-    N = np.array([i for i in range(0,num)])  # 0,n+1,N_1,N_2,N_3,N_S, super
-    N_0 = N[1:-1]  # shelters,N_1,N_2,N_3, super driver
-    N_S= np.array(N[-2:-9:-1])
-    sd = N[-9]
-    #N_1 = np.array(N[1:10])  # N_1 driver
-    n_1 = []
-    n_2 = []
-    n_3 = []
-    for i in range(len(type)-1): #last one is super driver
-        if type[i] == 1:
-            n_1.append(i+1)
-        elif type[i] == 2:
-            n_2.append(i+1)
-        elif type[i] == 0:
-            n_3.append(i+1)
-        else:
-            print("exceptional type!")
-            break
-    N_1 = np.array(n_1)
-    N_2 = np.array(n_2)
-    N_3 = np.array(n_3)
-    N_D = np.array([0 for i in range(0,num)])
-    N_dummy = np.array([0, num - 1])
-    print(len(N))
-    print(len(N_1))
-    print(len(N_2))
-    print(len(N_3))
-    print(N_D)
-    print(N_dummy)
-    for i in range(0, len(N_D)):
-        N_D[i] = random.choice(N_S)
-    #print(N_D)
-    ScenTimes = [360,1000]
-    Vh = []  # Driver index (N_1,N_2,N_3,super)
-    for item in N_1:
-        Vh.append(item)
-    for item in N_2:
-        Vh.append(item)
-    Vh.append(sd)
-    Vh = np.sort(Vh)
-    N_e = []  # evacuee list, including N_1,N_2,N_3
-    N_23 = [] # evacuee list, including N_2,N_3
-    for item in N_1:
-        N_e.append(item)
-    for item in N_2:
-        N_e.append(item)
-        N_23.append(item)
-    for item in N_3:
-        N_e.append(item)
-        N_23.append(item)
-    N_e = np.sort(N_e)
-    N_23 = np.sort(N_23)
-    #Vh = np.array([])
-    dm = np.array([0.0 for i in N])
-    #dm_seed = random.choices(range(1,3),k=num)
-    for i in range(len(passenger_count)):
-        dm[i+1] = passenger_count[i]
 
-    cv = np.array([0.0 for i in N])
-    for i in range(0,num):
-        cv[i] = random.randint(3,6)
-    #cv_seed = random.choices(range(3,5),k=num)
-    T_end = 1000
-    #sec_T = [500,1000]
-    #cenTimes.append(T_end)
+#with open('realcaseNetwork/1000demand_SPM.pkl', 'rb') as f:
+    #x_cord, y_cord, tt, sp = pickle.load(f)
+#f.close()
+with open('case/casenum1011_x_y_ttn_spn_type_dtime_count.pkl', 'rb') as f:
+     x_cord, y_cord, tt, sp, type, depart_time, passenger_count = pickle.load(f)
+     f.close()
+#=========add dummy node 0 and n+1=============
+x_min = x_cord[0]
+x_max = x_cord[-1]
+y_min = y_cord[0]
+y_max = y_cord[-1]
+num = len(x_cord)
+#print(num)
+#sd = num-2
+scenario = 2
+sc_set = [i for i in range(scenario)]
+bigM = 10000  # set bigM to the ij that do not have alternative path so that x_ij^vm no going to select this path
+#print(np.shape(tt))
+N = np.array([i for i in range(0,num)])  # 0,n+1,N_1,N_2,N_3,N_S, super
+N_0 = N[1:-1]  # shelters,N_1,N_2,N_3, super driver
+N_S= np.array(N[-2:-9:-1])
+sd = N[-9]
+#N_1 = np.array(N[1:10])  # N_1 driver
+n_1 = []
+n_2 = []
+n_3 = []
+for i in range(len(type)-1): #last one is super driver
+    if type[i] == 1:
+        n_1.append(i+1)
+    elif type[i] == 2:
+        n_2.append(i+1)
+    elif type[i] == 0:
+        n_3.append(i+1)
+    else:
+        print("exceptional type!")
+        break
+N_1 = np.array(n_1)
+N_2 = np.array(n_2)
+N_3 = np.array(n_3)
+N_D = np.array([0 for i in range(0,num)])
+N_dummy = np.array([0, num - 1])
+print(len(N))
+print(len(N_1))
+print(len(N_2))
+print(len(N_3))
+print(N_D)
+print(N_dummy)
+for i in range(0, len(N_D)):
+    N_D[i] = random.choice(N_S)
+#print(N_D)
+ScenTimes = [360,1000]
+Vh = []  # Driver index (N_1,N_2,N_3,super)
+for item in N_1:
+    Vh.append(item)
+for item in N_2:
+    Vh.append(item)
+Vh.append(sd)
+Vh = np.sort(Vh)
+N_e = []  # evacuee list, including N_1,N_2,N_3
+N_23 = [] # evacuee list, including N_2,N_3
+for item in N_1:
+    N_e.append(item)
+for item in N_2:
+    N_e.append(item)
+    N_23.append(item)
+for item in N_3:
+    N_e.append(item)
+    N_23.append(item)
+N_e = np.sort(N_e)
+N_23 = np.sort(N_23)
+#Vh = np.array([])
+dm = np.array([0.0 for i in N])
+#dm_seed = random.choices(range(1,3),k=num)
+for i in range(len(passenger_count)):
+    dm[i+1] = passenger_count[i]
 
-    # Tolerance
-    LDP = np.array([T_end for i in range(0, num)])  # latest departure time, the time location is affected
-    EDP = np.array([0 for i in range(0, num)])  # Earliest departure time
-    time_window = np.random.uniform(30,60,num) # time window uniformly distributed
-    for i in range(len(depart_time)):
-        EDP[i+1] = depart_time[i]
-        LDP[i+1] = EDP[i+1] + time_window[i]
-    #for i in range(0,num):
-     #   temp = random.uniform(0,720)
-      #  EDP[i] = temp
-       # LDP[i] = temp + time_window[i]
+cv = np.array([0.0 for i in N])
+for i in range(0,num):
+    cv[i] = random.randint(3,6)
+#cv_seed = random.choices(range(3,5),k=num)
+T_end = 1000
+#sec_T = [500,1000]
+#cenTimes.append(T_end)
 
-    DT = np.array([0 for i in range(0, num)])  # Detour time
-    dtrate = 1.5 #detour rate
-    heuristic_ratio = 1.5 # should less than detour ratio
-    for i in N_e:
-        DT[i] = tt[i][N_D[i]][0]*round(random.uniform(11,15))/10 #detour time based on shortest path time
-    min_flex_interval = 10 # minmum flexible time interval for per passenger picked up.
-    #for i in N_1:
-        #print(EDP[i], LDP[i], DT[i], tt[i][N_D[i]])
+# Tolerance
+LDP = np.array([T_end for i in range(0, num)])  # latest departure time, the time location is affected
+EDP = np.array([0 for i in range(0, num)])  # Earliest departure time
+time_window = np.random.uniform(30,60,num) # time window uniformly distributed
+for i in range(len(depart_time)):
+    EDP[i+1] = depart_time[i]
+    LDP[i+1] = EDP[i+1] + time_window[i]
+#for i in range(0,num):
+ #   temp = random.uniform(0,720)
+  #  EDP[i] = temp
+   # LDP[i] = temp + time_window[i]
 
-else:
-    with open('network/linknetwork1.pkl', 'rb') as f:
-        x_cord, y_cord, dis, con, tvt = pickle.load(f)
-    f.close()
-    with open(f'network/linknetwork1_SPMatrixAlt.pkl', 'rb') as f:
-        sp, tt, tvt, SceEdges, ScenTimes = pickle.load(f)
-    f.close()
-    for i in range(0, num):
-        for k in sc_set:
-            tt[0][i][k] = 1.0  # Zero node to all nodes for all scenarios
-            tt[i][0][k] = 1.0  # All nodes to 0 for all scenarios
-            tt[sd][i][k] = 1.0  # superdriver to all nodes for all scenarios
-            tt[i][sd][k] = 1.0  # all nodes to superdriver for all scenarios
-            tt[i][i][k] = 1.0  # node to itself for all scenarios
-
-    # =============== Case study Generation =======================
-    # set of all case studies of N
-    N_cases = [np.array([0, 1, 4, 5, 6, 8, 9, 10, 16, sd, 20]),
-               np.array([0, 1, 2, 7, 8, 10, 13, 17, 18, sd, 20]),
-               np.array([0, 1, 3, 4, 6, 8, 9, 10, 14, 15, 17, sd, 20]),
-               np.array([0, 1, 4, 5, 6, 7, 8, 9, 13, 12, 15, 16, 18, sd, 20])]
+DT = np.array([0 for i in range(0, num)])  # Detour time
+#dtrate = 1.5 #detour rate
+heuristic_ratio = 1.5 # should less than detour ratio
+for i in N_e:
+    for k in sc_set:
+        if EDP[i] + tt[i][N_D[i]][k] <= ScenTimes[k]:
+            DT[i] = round(tt[i][N_D[i]][k] * random.uniform(1.1, 1.5)) #detour rate
+min_flex_interval = 10 # minmum flexible time interval for per passenger picked up.
+#for i in N_1:
+    #print(EDP[i], LDP[i], DT[i], tt[i][N_D[i]])
 
 
-    case_count = len(N_cases)
-
-    N_1_cases = [np.array([5, 16]),
-                 np.array([2, 7, 10]),
-                 np.array([4, 6, 9]),
-                 np.array([5, 6, 7, 12, 15])]
-
-    N_2_cases = [np.array([4, 6]),
-                 np.array([13]),
-                 np.array([14, 17]),
-                 np.array([9, 13, 18])]
-
-    N_3_cases = [np.array([9, 10]),
-                 np.array([18, 17]),
-                 np.array([3, 10, 15]),
-                 np.array([4, 16])]  # Carless evacuees
-
-
-    N_S = np.array([1, 8])  # Shelters nodes
-
-    N_0_cases = [N_cases[i][1:-1] for i in range(case_count)]  # N1, N2, N3
-
-    # Destinations shelter for nodes
-    N_D_cases = [np.array([0 for _ in range(num)]) for _ in range(case_count)]
-    for case in range(case_count):
-        for node in range(num):
-            if node not in (0, 1, 8, sd, num-1):
-                N_D_cases[case][node] = random.choice(N_S)
-            if node in (1, 8):
-                N_D_cases[case][node] = num-1
-
-    vh_cases = [np.union1d(N_1_cases[i], np.union1d(N_2_cases[i], sd)) for i in range(case_count)]  # N_1 + N_2
-
-    # Dummy nodes 0 and N
-    N_dummy = np.array([0, num - 1])
-
-    # Evacuees list
-    Ne_cases = [np.union1d(N_1_cases[i], np.union1d(N_2_cases[i], N_3_cases[i])) for i in range(case_count)]
-
-    # Demand or passenger counts of nodes
-    dm_cases = [np.array([0 for _ in range(num)]) for _ in range(case_count)]
-    dm_list = [1, 2, 3]
-    random.seed(124)
-    for case in range(case_count):
-        for node in range(num):
-            if node not in (0, 1, 8, sd, 20):
-                dm_cases[case][node] = random.choice(dm_list)
-
-    # Capacity of nodes (for drivers)
-    cv_cases = [np.array([0 for _ in range(num)]) for _ in range(case_count)]
-    cv_list = [2, 3, 5, 4]
-    random.seed(123)
-    for case in range(case_count):
-        for node in range(num):
-            if node in np.union1d(N_1_cases[case], N_2_cases[case]):
-                cv_cases[case][node] = random.choice(cv_list)
-            if node == sd:
-                cv_cases[case][node] = 100
-
-    # Planning Time horizon (window)
-    T_end_cases = [1000, 1400, 1000, 800]
-    # =============== End of Case study Generation =======================
-
-    # ===== change case number from 1 to case_count to run codes for different case studies ====
-    case_number = 1
-
-    N = N_cases[case_number]  # 0,n+1,N_1,N_2,N_3,N_S, super
-    N_0 = N_0_cases[case_number]  # N_1,N_2,N_3
-    N_1 = N_1_cases[case_number]  # N_1 driver
-    N_2 = N_2_cases[case_number]  # N_2 : flexible driver
-    N_3 = N_3_cases[case_number]  # N_3 evacuee
-    N_D = N_D_cases[case_number]
-    Vh = vh_cases[case_number]  # Driver index (N_1,N_2,N_3,super)
-    N_e = Ne_cases[case_number]  # evacuee list, including N_1,N_2,N_3
-    dm = dm_cases[case_number]
-    cv = cv_cases[case_number]
-    T_end = T_end_cases[case_number]
-    ScenTimes.append(T_end)
-
-    # Tolerance
-    LDP = np.array([T_end for i in range(0, num)])  # latest departure time, the time location is affected
-    EDP = np.array([0 for i in range(0, num)])  # Earliest departure time
-
-    DT = np.array([T_end for i in range(0, num)])  # Detour time
-    DT[2] = 130
-    DT[3] = 150
-    DT[10] = 280
-    DT[11] = 180
-    DT[13] = 180
-    DT[16] = 180
-    DT[19] = 10000
 
 tts = np.divide(tt, 100)  # Super driver travel time
 
@@ -407,9 +296,9 @@ class model:
                     #   rtempvar = solution.get_value(self.r[i,k])
                     #  r_var[i][k] = round(rtempvar,2)
                     print(f'Value of r[{i},{k}]:', r_var[i][k])
-            with open(f'solutions/case_{case_number}_solutions.pkl', 'wb') as f:
-                pickle.dump([x_var, y_var, r_var, sol_time], f)
-            f.close()
+            #with open(f'solutions/case_{case_number}_solutions.pkl', 'wb') as f:
+             #   pickle.dump([x_var, y_var, r_var, sol_time], f)
+            #f.close()
             self.mdl.end()
 
 
@@ -541,12 +430,14 @@ class dynapro:
                     dtmin = min(dt)
 #=======================elimination rule 1: each action will check detour time for all passenger on car===========================================
                     feasi = True # check is there node that is visited before is not able arrivle its destination by visiting node 'des'
+                    #addtime = 0.0
                     for j in range(0,len(R)):
                         tempf = False
                         for k in range(len(tt[des][N_D[j]])):
                             tempt = T_j + tt[des][N_D[j]][k]
-                            if tempt < dt[j]:
+                            if tempt < dt[j] and tempt <= ScenTimes[k] and tempt <= dt[0]:
                                 tempf = True
+
                                 break
                         if tempf == False:
                             feasi = False
@@ -562,11 +453,14 @@ class dynapro:
                                 des_set.append(N_D[item])
                         des_TT = 0
                         if len(des_set) == 1:
-                            des_TT = tt[des][des_set[0]][i]
+                            des_TT = tt[des][des_set[0]][0]
                         else:
-                            des_TT = tt[des_set[-1]][des_set[0]][i]
-                            for k in range(len(des_set)-1):
-                                des_TT = tt[des_set[k]][des_set[k+1]][i]
+                            des_TT=0
+                            for l in sc_set:
+                                des_TT = tt[des_set[-1]][des_set[0]][l]
+                                for k in range(len(des_set)-1):
+                                    des_TT = tt[des_set[k]][des_set[k+1]][l]
+                            des_TT = des_TT/scenario
                         if T_j + des_TT*heuristic_ratio > dt[0]:
                             return None
 #=======================end of elimination rule 5======================================================
