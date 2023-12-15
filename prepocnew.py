@@ -3,6 +3,7 @@ from pandas import *
 import matplotlib.pyplot as plt
 import pickle
 import numpy as np
+import geopy.distance
 
 x_min = -96.82036511
 x_max = -94.34020794
@@ -21,6 +22,10 @@ shelter_data = read_csv(r'evacueeinfo\shelter_location.csv')
 x_shelter_data = shelter_data['x_cord'].tolist()
 y_shelter_data = shelter_data['y_cord'].tolist()
 near_shelter_node = shelter_data['JOIN_FID'].tolist()
+
+data2 = read_csv(r'G:\My Drive\Postdoc Work\ridersharinghouston_nodes.csv')
+x_node_cord = data2['x_cord'].tolist()
+y_node_cord = data2['y_cord'].tolist()
 
 x_min = min(min(x_demand_data), min(x_shelter_data))-0.01
 y_min = min(min(y_demand_data), min(y_shelter_data))-0.01
@@ -77,13 +82,18 @@ spn = np.array([[[None for k in sc_set] for j in range(new_num)] for i in range(
 service_time=2.0
 for i in range(1,new_num-1):
     o_node = near_node[i]
-    for j in range(1,new_num-1):
+    for j in range(i+1,new_num-1):
         d_node = near_node[j]
         #print(o_node, d_node)
         if o_node == d_node:
             for k in sc_set:
-                ttn[i][j][k] = service_time
+                coord_1 = (x_cord[i], y_cord[i])
+                coord_2 = (x_cord[j], y_cord[j])
+                distance = geopy.distance.geodesic(coord_1,coord_2).km*1000
+                ttn[i][j][k] = distance
+                ttn[j][i][k] = distance
                 spn[i][j][k] = [i,j]
+                spn[j][i][k] = [j,i]
         else:
             for k in sc_set:
                 ttn[i][j][k] = tt[o_node][d_node][k] + 2*service_time
