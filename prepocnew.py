@@ -9,6 +9,7 @@ x_min = -96.82036511
 x_max = -94.34020794
 y_min = 28.93832832
 y_max = 30.88910535
+travel_speed = [1666,1333, 666]
 
 demand_data = read_csv(r'evacueeinfo\Zone_Coastal_eva1002_simulation_a0.03_b0.6_g0.4.csv')
 x_demand_data = demand_data['x_cord'].tolist()
@@ -23,7 +24,7 @@ x_shelter_data = shelter_data['x_cord'].tolist()
 y_shelter_data = shelter_data['y_cord'].tolist()
 near_shelter_node = shelter_data['JOIN_FID'].tolist()
 
-data2 = read_csv(r'G:\My Drive\Postdoc Work\ridersharinghouston_nodes.csv')
+data2 = read_csv(r'evacueeinfo\houston_nodes.csv')
 x_node_cord = data2['x_cord'].tolist()
 y_node_cord = data2['y_cord'].tolist()
 
@@ -89,15 +90,24 @@ for i in range(1,new_num-1):
             for k in sc_set:
                 coord_1 = (x_cord[i], y_cord[i])
                 coord_2 = (x_cord[j], y_cord[j])
-                distance = geopy.distance.geodesic(coord_1,coord_2).km*1000
-                ttn[i][j][k] = distance
-                ttn[j][i][k] = distance
+                travel_time = geopy.distance.geodesic(coord_1,coord_2).km*1000/travel_speed[-1]
+                ttn[i][j][k] = travel_time
+                ttn[j][i][k] = travel_time
                 spn[i][j][k] = [i,j]
                 spn[j][i][k] = [j,i]
         else:
             for k in sc_set:
-                ttn[i][j][k] = tt[o_node][d_node][k] + 2*service_time
+                coord_1 = (x_cord[i], y_cord[i])
+                coord_1_node = (x_node_cord[o_node], y_node_cord[o_node])
+                travel_time_1 = geopy.distance.geodesic(coord_1,coord_1_node).km*1000/travel_speed[-1]
+                coord_2 = (x_cord[j], y_cord[j])
+                coord_2_node = (x_node_cord[d_node], y_node_cord[d_node])
+                travel_time_2 = geopy.distance.geodesic(coord_2, coord_2_node).km * 1000/travel_speed[-1]
+                travel_time_3 = tt[o_node][d_node][k] + travel_time_1  + travel_time_2
+                ttn[i][j][k] = travel_time_3
+                ttn[j][i][k] = travel_time_3
                 spn[i][j][k] = sp[o_node][d_node][k]
+                spn[j][i][k] = sp[d_node][o_node][k]
 
 sd = new_num-2
 for i in range(0, new_num):
