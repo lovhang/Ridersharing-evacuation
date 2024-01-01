@@ -116,7 +116,10 @@ for i in range(len(depart_time)):
 
 DT = np.array([0 for i in N])  # Detour time
 #dtrate = 1.5 #detour rate
-heuristic_ratio = [[0.0,0.0,0.0,0.0,0.0,0.0],[8.0,6.0,2.0,1.0,1.0,1.0]]# should less than detour ratio
+heuristic_ratio = [[0,0,0,0,0,0,0,0,0,0],
+                    [200.0,10.0,10.0,10.0,2.0,1.0,1.0,1.0,1.0,1.0],
+                    [200.0,150.0,10.0,10.0,2.0,1.0,1.0,1.0,1.0,1.0]]# should less than detour ratio
+heuristic_ratio = [[0,0,0,0,0,0,0,0,0,0]]
 for i in N_1:
     for k in sc_set:
         if EDP[i] + tt[i][N_D[i]][k] <= ScenTimes[k]:
@@ -129,16 +132,16 @@ for i in N_3:
     for k in sc_set:
         if EDP[i] + tt[i][N_D[i]][k] <= ScenTimes[k]:
             DT[i] = round(tt[i][N_D[i]][k] * random.uniform(1.1, 1.5))  # detour rate
-min_flex_interval = 5 # minmum flexible time interval for per passenger picked up.
+min_flex_interval = 10 # minmum flexible time interval for per passenger picked up.
 #for i in N_1:
     #print(EDP[i], LDP[i], DT[i], tt[i][N_D[i]])
-Largest_state_num = 500000
+Largest_state_num = 100000
 tts = np.divide(tt, 100)  # Super driver travel time
 
 
-#with open('case/param_1_1011_dm_cv_EDP_LDP_DT.pkl', 'rb') as f:
-#    dm, cv, EDP, LDP, DT = pickle.load(f)
-#    f.close()
+with open('case/param_2_1011_dm_cv_EDP_LDP_DT.pkl', 'rb') as f:
+    dm, cv, EDP, LDP, DT = pickle.load(f)
+    f.close()
 
 #e_param = pd.DataFrame(
 #    {'id': N, 'demand': dm, 'capacity': cv, 'earlist_departure': EDP, 'lateste_departure': LDP, 'detour': DT})
@@ -156,7 +159,7 @@ y_var = np.zeros((num, num))  # q(i, v)
 r_var = np.zeros((num, num))  # r(i, v)
 
 def save_current_network_para():
-    with open('case/param_1_{n}_dm_cv_EDP_LDP_DT.pkl'.format(n=num), 'wb') as f:
+    with open('case/param_2_{n}_dm_cv_EDP_LDP_DT.pkl'.format(n=num), 'wb') as f:
         pickle.dump([dm,cv, EDP, LDP, DT], f)
     f.close()
 #def load_current_network_para(dm,cv,EDP,LDP,DT):
@@ -409,6 +412,7 @@ class dynapro:
                     for i in range(len(tt[l][des])):
                         T_j = T[-1] + tt[l][des][i]  #
                         Q_j = Q[-1]
+                        #print(T[-1],tt[l][des][i] , T_j, min(ScenTimes[i],dtmin))
                         if T_j+min_flex_interval <= min(ScenTimes[i],dtmin): #deleted DT[des] here, not sure
                             R = []
                             dt = []
@@ -445,45 +449,40 @@ class dynapro:
                             feasi = False
                             break
                     # =======================end of elimination rule 1======================================================
-                    if feasi == False:
-                        return None
-                    else:
+                    if feasi == True:
                         # ========================elimination rule 5 =====================================
                         des_set = [N_D[des]]
                         for item in R:
                             if N_D[item] not in des_set:
                                 des_set.append(N_D[item])
-                        des_TT = 0
+                        des_TT = 2
                         if len(des_set) == 1:
                             for k in sc_set:
                                 des_TT += tt[des][des_set[0]][k]
                             des_TT = des_TT / scenario
                         else:
-                            des_TT = 0
                             for l in sc_set:
-                                des_TT = tt[des_set[-1]][des_set[0]][l]
+                                des_TT +=tt[des_set[-1]][des_set[0]][l]
                                 for k in range(len(des_set) - 1):
-                                    des_TT = tt[des_set[k]][des_set[k + 1]][l]
+                                    des_TT += tt[des_set[k]][des_set[k + 1]][l]
                             des_TT = des_TT / scenario
-                        if T_j + des_TT * self.ratio[it_num] + min_flex_interval > dt[0]:
-                            return None
-                        else:
-                            latest_ar_time = min(ScenTimes[i], dtmin)
-                            if T_j + min_flex_interval <= latest_ar_time: #deleted DT[des] here, not sure
-                                for j in range(len(R) - 1, -1, -1):
-                                    if N_D[R[j]] == des:
-                                        Q_j -= dm[R[j]]
-                                        del R[j]
-                                        del dt[j]
-
-                                S.append(des)
-                                T.append(T_j)
-                                Q.append(Q_j)
-                                route.append(sp[l][des][i])
-                                l = des
-                                alternative.append(temp_alt)
-                                #flex_time = min(flex_time, latest_ar_time - T_j)
-                                return state(S, R, T, dt, Q, route, l,alternative, e_num)
+                        #print(T_j, des_TT, self.ratio[it_num], dt[0])
+                        if T_j + des_TT * self.ratio[it_num] + min_flex_interval < dt[0] and T_j + min_flex_interval <= min(ScenTimes[i], dtmin):
+                            #print(T_j, des_TT, self.ratio[it_num], dt[0])
+                            #print(tt[R[-1]][N_D[R[-1]]][0],tt[R[-1]][N_D[R[-1]]][1])
+                            for j in range(len(R) - 1, -1, -1):
+                                if N_D[R[j]] == des:
+                                    Q_j -= dm[R[j]]
+                                    del R[j]
+                                    del dt[j]
+                            S.append(des)
+                            T.append(T_j)
+                            Q.append(Q_j)
+                            route.append(sp[l][des][i])
+                            l = des
+                            alternative.append(temp_alt)
+                            # flex_time = min(flex_time, latest_ar_time - T_j)
+                            return state(S, R, T, dt, Q, route, l, alternative, e_num)
                     temp_alt += 1
                 return None
         elif des in N_e:  # if des is node of evacuees
@@ -512,113 +511,106 @@ class dynapro:
                             feasi = False
                             break
 #=======================end of elimination rule 1======================================================
-                    if feasi == False:
-                        return None
-                    else:
+                    if feasi == True:
 #========================elimination rule 5 =====================================
                         des_set = [N_D[des]]
                         for item in R:
                             if N_D[item] not in des_set:
                                 des_set.append(N_D[item])
-                        des_TT = 0
+                        des_TT = 2
                         if len(des_set) == 1:
                             for k in sc_set:
                                 des_TT += tt[des][des_set[0]][k]
                             des_TT = des_TT/scenario
                         else:
-                            des_TT=0
                             for l in sc_set:
-                                des_TT = tt[des_set[-1]][des_set[0]][l]
+                                des_TT += tt[des_set[-1]][des_set[0]][l]
                                 for k in range(len(des_set)-1):
-                                    des_TT = tt[des_set[k]][des_set[k+1]][l]
+                                    des_TT += tt[des_set[k]][des_set[k+1]][l]
                             des_TT = des_TT/scenario
-                        if T_j + des_TT*self.ratio[it_num]+min_flex_interval> dt[0]:
-                            return None
-                        else:
+                        #print(T_j, des_TT, self.ratio[it_num], dt[0])
+                        if T_j + des_TT*self.ratio[it_num]+min_flex_interval < dt[0] and T_j + min_flex_interval < min(ScenTimes[i], LDP[des], dtmin):
 #=======================end of elimination rule 5======================================================
-                            latest_ar_time = min(ScenTimes[i], LDP[des], dtmin)
-                            if T_j + min_flex_interval <= latest_ar_time and Q_j <= cv[S[1]]:
-                                R.append(des)
-                                S.append(des)
-                                T.append(T_j)
-                                dt.append(T_j + DT[des])
-                                Q.append(Q_j)
-                                route.append(sp[l][des][i])
-                                l = des
-                                alternative.append(temp_alt)
-                                e_num += 1
-                                #flex_time = min(flex_time, latest_ar_time)
-                                return state(S, R, T, dt, Q, route, l, alternative, e_num)
+                            #print(T_j, des_TT, self.ratio[it_num], dt[0])
+                            #print(tt[R[-1]][N_D[R[-1]]][0],tt[R[-1]][N_D[R[-1]]][1])
+                            R.append(des)
+                            S.append(des)
+                            T.append(T_j)
+                            dt.append(T_j + DT[des])
+                            Q.append(Q_j)
+                            route.append(sp[l][des][i])
+                            l = des
+                            alternative.append(temp_alt)
+                            e_num += 1
+                            #flex_time = min(flex_time, latest_ar_time)
+                            return state(S, R, T, dt, Q, route, l, alternative, e_num)
                     temp_alt += 1
                 return None
         else:
             print('des not in N_e and N_S')
             return False
     def rundp(self, input):
-        try:
-            tempslopol = input
-            returnstate = []
-            if len(tempslopol) >= 1:
-                #self.ite += 1
-                print('====iteration: {i}===='.format(i=self.ite))
-                print('====current states num: {num} ,start to extend state===='.format(num=len(self.solutionpoll)))
-                for item in tqdm(tempslopol):
-                    # print('S before', item.S)
-                    # print('last', item.last)
-                    can_node = []
-                    S = item.S
-                    R = item.R
-                    e_num = item.e_num
-                    #print(item.S)
-                    max_p_num = 10
-                    for _ in N_23:
-                        # ====================rule 4=========================
-                        # if e_num <= max_p_num # limit total number of evacuees to be visited
-                        # ====================end rule 4 ====================
-                        if e_num <= max_p_num and _ not in S:
-                            can_node.append(_)
-                    for _ in R:
-                        #if N_D[_] not in S:
-                        can_node.append(N_D[_])
-                    #for _ in S:
-                     #   if N_D[_] in N_S:
-                      #      can_node.append(int(N_D[_]))
-                       #     break
-                    #print(can_node)
-                    #print(item.S)
-                    for des in can_node:
-                            # print('des', des)
-                        tpstate = self.action(item, des, self.ite)
-                        if tpstate != None:
-                            if tpstate.last == N[-1]:
-                                self.candidateState.append(tpstate)
-                            else:
-                                returnstate.append(tpstate)
-                #self.solutionpoll = returnstate.copy()
-                print("number of state before elinimation1: {num_state}".format(num_state = len(returnstate)))
-                #print(returnstate)
-    #===================elimination rule: keep routes has larger capacity with identical node set visit before=============================
-                #tempstate = self.eliminate(returnstate)
-                #print("number of state after elinimation1: {num_state}".format(num_state=len(tempstate)))
-                #returnstate = tempstate
-                #for item in tempstate:
-                 #   print(item.S)
-    #===================end of elimination rule======================
-                self.solutionpoll = returnstate
-                state_num = len(self.solutionpoll)
-                if state_num > Largest_state_num:
-                    raise Exception("large state number")
-                self.state_num = self.state_num + state_num
-                return self.rundp(self.solutionpoll)
-                self.ite += 1
-            else:
-                print("======end iteration, candidate route:======")
-
-                #for item in self.candidateState:
-                 #   print(item.S)
-                return None
-        except:
-            print("number of states too large")
+        tempslopol = input
+        returnstate = []
+        if len(tempslopol) >= 1 and self.state_num < Largest_state_num:
+            #self.ite += 1
+            print('====iteration: {i}===='.format(i=self.ite))
+            print('====current states num: {num} ,start to extend state===='.format(num=len(self.solutionpoll)))
+            print('ratio {r}'.format(r = self.ratio[self.ite]))
+            for item in tqdm(tempslopol):
+                #print('S before', item.S)
+                # print('last', item.last)
+                can_node = []
+                S = item.S
+                R = item.R
+                e_num = item.e_num
+                #print(item.S)
+                max_p_num = 4
+                for _ in N_23:
+                    # ====================rule 4=========================
+                    # if e_num <= max_p_num # limit total number of evacuees to be visited
+                    # ====================end rule 4 ====================
+                    if e_num <= max_p_num and _ not in S:
+                        can_node.append(_)
+                for _ in R:
+                    #if N_D[_] not in S:
+                    can_node.append(N_D[_])
+                #for _ in S:
+                 #   if N_D[_] in N_S:
+                  #      can_node.append(int(N_D[_]))
+                   #     break
+                #print(can_node)
+                #print(item.S)
+                for des in can_node:
+                        # print('des', des)
+                    tpstate = self.action(item, des, self.ite)
+                    if tpstate != None:
+                        if tpstate.last == N[-1]:
+                            self.candidateState.append(tpstate)
+                        else:
+                            returnstate.append(tpstate)
+            #self.solutionpoll = returnstate.copy()
+            print("number of state before elinimation1: {num_state}".format(num_state = len(returnstate)))
+            #print(returnstate)
+#===================elimination rule: keep routes has larger capacity with identical node set visit before=============================
+            #tempstate = self.eliminate(returnstate)
+            #print("number of state after elinimation1: {num_state}".format(num_state=len(tempstate)))
+            #returnstate = tempstate
+            #for item in tempstate:
+             #   print(item.S)
+#===================end of elimination rule======================
+            self.solutionpoll = returnstate
+            state_num = len(self.solutionpoll)
+            #if state_num > Largest_state_num:
+                #raise Exception("large state number")
+            self.state_num = self.state_num + state_num
+            self.ite += 1
+            return self.rundp(self.solutionpoll)
+        else:
+            print("======end iteration, candidate route:======")
+            #for item in self.candidateState:
+             #   print(item.S)
+            return None
     def eliminate(self, input):
         inputstate = input.copy()
         uniqueState = []
