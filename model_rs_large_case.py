@@ -112,15 +112,15 @@ for i in range(len(depart_time)):
 
 DT = np.array([0 for i in range(0, num)])  # Detour time
 #dtrate = 1.5 #detour rate
-heuristic_ratio = 1.5 # should less than detour ratio
+heuristic_ratio = 1.0 # should less than detour ratio
 for i in N_e:
     for k in sc_set:
         if EDP[i] + tt[i][N_D[i]][k] <= ScenTimes[k]:
             DT[i] = round(tt[i][N_D[i]][k] * random.uniform(1.1, 1.5)) #detour rate
-min_flex_interval = 10 # minmum flexible time interval for per passenger picked up.
+min_flex_interval = 20 # minmum flexible time interval for per passenger picked up.
 #for i in N_1:
     #print(EDP[i], LDP[i], DT[i], tt[i][N_D[i]])
-
+Largest_state_num = 1000000
 
 
 tts = np.divide(tt, 100)  # Super driver travel time
@@ -303,7 +303,7 @@ class model:
 
 
 class state:
-    def __init__(self, S, R, T, dt, Q, route, last, alternative, e_num, flex_time):
+    def __init__(self, S, R, T, dt, Q, route, last, alternative, e_num):
         # print(input)
         # self.v = input
         self.S = S  # Set of included node
@@ -315,7 +315,6 @@ class state:
         self.last = last # last node of current path
         self.alternative = alternative
         self.e_num = e_num # number of evacuees already visited before
-        self.flex_time = flex_time
         # for _ in N_0:
         #   if _ != sd and _ != self.v:
         #      self.C.add(_)
@@ -344,8 +343,8 @@ class dynapro:
             last = _
             alternative = []
             e_num = 1 # number of evacuees picked before
-            flex_time = LDP[_] - et # flexible time
-            s1 = state(S, R, T, dt, Q, route, last, alternative, e_num, flex_time)
+            #flex_time = LDP[_] - et # flexible time
+            s1 = state(S, R, T, dt, Q, route, last, alternative, e_num)
             self.solutionpoll.append(s1)
         self.state_num = len(self.solutionpoll)
     def action(self, inputstate: state, des: int):
@@ -358,7 +357,6 @@ class dynapro:
         l = inputstate.last
         alternative = inputstate.alternative.copy()
         e_num = inputstate.e_num
-        flex_time = inputstate.flex_time
         #print(N_S)
         if des in N_S:  # for des is the destination node
             if N_D[S[1]] == des:  # if des is the destination of driver
@@ -372,24 +370,24 @@ class dynapro:
                     return None
                 else:
                     temp_alt = 0
+                    dtmin = min(dt)
+                    #earlist_ar_time = min(dtmin)
                     for i in range(len(tt[l][des])):
                         T_j = T[-1] + tt[l][des][i]  #
                         Q_j = Q[-1]
-                        dtmin = min(dt)
-                        latest_ar_time = min(ScenTimes[i], dtmin)
-                        if T_j <= latest_ar_time: #deleted DT[des] here, not sure
+                        if T_j+min_flex_interval <= min(ScenTimes[i],dtmin): #deleted DT[des] here, not sure
                             R = []
                             dt = []
                             Q_j = 0
                             S.append(des)
-                            S.append(N[-1])
+                            #S.append(N[-1])
                             T.append(T_j)
                             Q.append(Q_j)
                             route.append(sp[l][des][i])
                             l = N[-1]
                             alternative.append(temp_alt)
-                            flex_time = min(flex_time, latest_ar_time-T_j)
-                            return state(S, R, T, dt, Q, route, l, alternative, e_num, flex_time)
+                            #flex_time = min(flex_time, min(ScenTimes[i],dtmin)-T_j)
+                            return state(S, R, T, dt, Q, route, l, alternative, e_num)
                         temp_alt += 1
                     return None
             else:
@@ -399,7 +397,7 @@ class dynapro:
                     Q_j = Q[-1]
                     dtmin = min(dt)
                     latest_ar_time = min(ScenTimes[i], dtmin)
-                    if T_j <= latest_ar_time: #deleted DT[des] here, not sure
+                    if T_j + min_flex_interval <= latest_ar_time: #deleted DT[des] here, not sure
                         for j in range(len(R) - 1, -1, -1):
                             if N_D[R[j]] == des:
                                 Q_j -= dm[R[j]]
@@ -412,9 +410,8 @@ class dynapro:
                         route.append(sp[l][des][i])
                         l = des
                         alternative.append(temp_alt)
-                        flex_time = min(flex_time, latest_ar_time - T_j)
-                        if flex_time > min_flex_interval*e_num: # rule 6==========================
-                            return state(S, R, T, dt, Q, route, l,alternative, e_num, flex_time)
+                        #flex_time = min(flex_time, latest_ar_time - T_j)
+                        return state(S, R, T, dt, Q, route, l,alternative, e_num)
                     temp_alt += 1
                 return None
         elif des in N_e:  # if des is node of evacuees
@@ -429,13 +426,13 @@ class dynapro:
                     Q_j = Q[-1] + dm[des]
                     dtmin = min(dt)
 #=======================elimination rule 1: each action will check detour time for all passenger on car===========================================
-                    feasi = True # check is there node that is visited before is not able arrivle its destination by visiting node 'des'
+                    feasi = True # check if there node that is visited before is not able arrivle its destination by visiting node 'des'
                     #addtime = 0.0
                     for j in range(0,len(R)):
                         tempf = False
                         for k in range(len(tt[des][N_D[j]])):
                             tempt = T_j + tt[des][N_D[j]][k]
-                            if tempt < dt[j] and tempt <= ScenTimes[k] and tempt <= dt[0]:
+                            if tempt + min_flex_interval< dt[j] and tempt +min_flex_interval <= ScenTimes[k] and tempt+min_flex_interval <= dt[0]:
                                 tempf = True
 
                                 break
@@ -453,7 +450,9 @@ class dynapro:
                                 des_set.append(N_D[item])
                         des_TT = 0
                         if len(des_set) == 1:
-                            des_TT = tt[des][des_set[0]][0]
+                            for k in sc_set:
+                                des_TT += tt[des][des_set[0]][k]
+                            des_TT = des_TT/scenario
                         else:
                             des_TT=0
                             for l in sc_set:
@@ -461,11 +460,11 @@ class dynapro:
                                 for k in range(len(des_set)-1):
                                     des_TT = tt[des_set[k]][des_set[k+1]][l]
                             des_TT = des_TT/scenario
-                        if T_j + des_TT*heuristic_ratio > dt[0]:
+                        if T_j + des_TT*heuristic_ratio+min_flex_interval> dt[0]:
                             return None
 #=======================end of elimination rule 5======================================================
                         latest_ar_time = min(ScenTimes[i], LDP[des], dtmin)
-                        if T_j <= latest_ar_time and Q_j <= cv[S[1]]:
+                        if T_j + min_flex_interval <= latest_ar_time and Q_j <= cv[S[1]]:
                             R.append(des)
                             S.append(des)
                             T.append(T_j)
@@ -475,9 +474,8 @@ class dynapro:
                             l = des
                             alternative.append(temp_alt)
                             e_num += 1
-                            flex_time = min(flex_time, latest_ar_time)
-                            if flex_time > min_flex_interval * e_num: # rule 6==========================
-                                return state(S, R, T, dt, Q, route, l, alternative, e_num, flex_time)
+                            #flex_time = min(flex_time, latest_ar_time)
+                            return state(S, R, T, dt, Q, route, l, alternative, e_num)
                     temp_alt += 1
                 return None
         else:
@@ -499,7 +497,7 @@ class dynapro:
                     R = item.R
                     e_num = item.e_num
                     #print(item.S)
-                    max_p_num = 3
+                    max_p_num = 10
                     for _ in N_23:
                         # ====================rule 4=========================
                         # if e_num <= max_p_num # limit total number of evacuees to be visited
@@ -535,8 +533,8 @@ class dynapro:
     #===================end of elimination rule======================
                 self.solutionpoll = returnstate
                 state_num = len(self.solutionpoll)
-                if state_num > 500000:
-                    raise Exception("number state too large ")
+                if state_num > Largest_state_num:
+                    raise Exception("large state number")
                 self.state_num = self.state_num + state_num
                 return self.rundp(self.solutionpoll)
             else:
@@ -546,7 +544,7 @@ class dynapro:
                  #   print(item.S)
                 return None
         except:
-            print("something went wrong")
+            print("number of states too large")
     def eliminate(self, input):
         inputstate = input.copy()
         uniqueState = []
@@ -557,12 +555,15 @@ class dynapro:
             s1 = state1.S
             de = False # whether s1 belong to one of uniqueState
             for j in range(len(uniqueState)):
-                s2 = uniqueState[j].S
+                state2 = uniqueState[j]
+                s2 = state2.S
                 if (np.array_equal(np.sort(s1),np.sort(s2)) == True):
                     new_cap = cv[s1[1]]
                     old_cap = cv[s2[1]]
+                    new_T = state1.T[-1]
+                    old_T = state2.T[-1]
                     de = True
-                    if(new_cap > old_cap):
+                    if(new_cap > old_cap and new_T < old_T):
                         del uniqueState[j]
                         uniqueState.append(state1)
                     break

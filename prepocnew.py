@@ -88,8 +88,8 @@ for i in range(1,new_num-1):
         #print(o_node, d_node)
         if o_node == d_node:
             for k in sc_set:
-                coord_1 = (x_cord[i], y_cord[i])
-                coord_2 = (x_cord[j], y_cord[j])
+                coord_1 = (y_cord[i], x_cord[i])
+                coord_2 = (y_cord[j], x_cord[j])
                 travel_time = geopy.distance.geodesic(coord_1,coord_2).km*1000/travel_speed[-1]
                 ttn[i][j][k] = travel_time
                 ttn[j][i][k] = travel_time
@@ -97,11 +97,11 @@ for i in range(1,new_num-1):
                 spn[j][i][k] = [j,i]
         else:
             for k in sc_set:
-                coord_1 = (x_cord[i], y_cord[i])
-                coord_1_node = (x_node_cord[o_node], y_node_cord[o_node])
+                coord_1 = (y_cord[i], x_cord[i])
+                coord_1_node = (y_node_cord[o_node], x_node_cord[o_node])
                 travel_time_1 = geopy.distance.geodesic(coord_1,coord_1_node).km*1000/travel_speed[-1]
-                coord_2 = (x_cord[j], y_cord[j])
-                coord_2_node = (x_node_cord[d_node], y_node_cord[d_node])
+                coord_2 = (y_cord[j], x_cord[j])
+                coord_2_node = (y_node_cord[d_node], x_node_cord[d_node])
                 travel_time_2 = geopy.distance.geodesic(coord_2, coord_2_node).km * 1000/travel_speed[-1]
                 travel_time_3 = tt[o_node][d_node][k] + travel_time_1  + travel_time_2
                 ttn[i][j][k] = travel_time_3
